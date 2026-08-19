@@ -1,16 +1,13 @@
-# on MacOS it might be necessary to remove -DSEMINIT
-CFLAGS = -O2 -Wall -Wno-narrowing -DSEMINIT \
+CFLAGS = -O2 -Wall -Wno-narrowing \
   -I./ \
-  -I/usr/include \
-  -I/usr/include/GL \
+  -I/opt/homebrew/include \
   -I../../libSNL/src \
-  -I../../glut-3.5/src \
-  -I/usr/X11/include 
+  -I../../glut-3.5/src
 
 LFLAGS = \
-  -L/usr/lib64 -lGL -lGLU \
-  -L/usr/X11R6/lib64 -lX11 -lXi -lXmu -lXext -lXt -lSM -lICE \
-  -lm -lpthread -lrt
+  -L/opt/homebrew/lib -lGL -lGLU \
+  -L/opt/homebrew/lib -lX11 -lXi -lXmu -lXext -lXt -lSM -lICE \
+  -lm -lpthread
 
 
 # on 32bit systems change lib64 to lib
