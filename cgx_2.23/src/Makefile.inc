@@ -117,6 +117,7 @@ SLIB = \
  write2duns.c \
  write2frd.c \
  write2foam.c \
+ write2vtu.c \
  write2nas.c \
  write2samcef.c \
  write2tochnog.c \
