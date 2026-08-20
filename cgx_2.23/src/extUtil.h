@@ -20,24 +20,28 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <ctype.h>
-#include <GL/gl.h>
-#include <GL/glx.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <ctype.h>
 
-#ifdef WIN32
-  #include <GL/glut.h>
-  #define printf printf_fflush
-  #ifdef __cplusplus
-extern "C" {
-  #endif
-void printf_fflush(const char *fmt,...);
-  #ifdef __cplusplus
-}
-  #endif
+#ifdef USE_GLFW
+  #include "cgx_glut_glfw.h"
 #else
-  #include <GL/glut_cgx.h>
+  #include <GL/gl.h>
+  #include <GL/glx.h>
+  #ifdef WIN32
+    #include <GL/glut.h>
+    #define printf printf_fflush
+    #ifdef __cplusplus
+  extern "C" {
+    #endif
+  void printf_fflush(const char *fmt,...);
+    #ifdef __cplusplus
+  }
+    #endif
+  #else
+    #include <GL/glut_cgx.h>
+  #endif
 #endif
 
 #define     PI          3.14159265358979323846264338327950288
@@ -726,8 +730,10 @@ int write2duns( char *datout, Summen *anz, Nodes *node, Elements *elem, Datasets
 
 
 
+#ifndef USE_GLFW
 void readStdCmap( Display **ptr_dpy, int *ptr_dpycells, Colormap *ptr_cmap, XColor **ptr_c,
                  unsigned long **ptr_pix, unsigned int *ptr_npixels, int anzCells );
+#endif
 
 /*selectFaces.c */
 int selectDisplayFacesHe8 (Elements *elems, int numElems, int **pfaces, int *);

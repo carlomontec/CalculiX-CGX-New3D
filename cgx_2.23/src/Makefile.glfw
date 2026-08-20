@@ -1,0 +1,73 @@
+# --------------------------------------------------------------------
+# Makefile.glfw - Modern GLFW & OpenGL Build for CalculiX CGX
+# Compiles native macOS (Cocoa/Metal) and native Linux (Wayland/X11)
+# --------------------------------------------------------------------
+
+UNAME_S := $(shell uname -s)
+
+CC = gcc
+CXX = g++
+
+CFLAGS = -O2 -Wall -Wno-narrowing -DUSE_GLFW \
+  -I./ \
+  -I../../libSNL/src \
+  -I../../glut-3.5/src
+
+ifeq ($(UNAME_S),Darwin)
+  # macOS native configuration (Zero X11 / Zero XQuartz)
+  CFLAGS += -I/opt/homebrew/include -I/opt/homebrew/Cellar/glfw/3.5.1/include
+  LFLAGS = -L/opt/homebrew/lib -L/opt/homebrew/Cellar/glfw/3.5.1/lib -lglfw \
+           -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo \
+           -lm -lpthread
+else
+  # Linux configuration (Native Wayland & X11 via GLFW)
+  CFLAGS += $(shell pkg-config --cflags glfw3 2>/dev/null)
+  LFLAGS = $(shell pkg-config --libs glfw3 2>/dev/null || echo "-lglfw") -lGL -lGLU -lm -lpthread -ldl
+endif
+
+include Makefile.inc
+
+ULIB = \
+ userFunction.c
+
+# Pure OpenGL Font bitmap tables from glut-3.5 (Zero X11 dependencies)
+FONT_LIB = \
+ ../../glut-3.5/src/glut_8x13.c \
+ ../../glut-3.5/src/glut_9x15.c \
+ ../../glut-3.5/src/glut_hel10.c \
+ ../../glut-3.5/src/glut_hel18.c \
+ ../../glut-3.5/src/glut_hel12.c \
+ ../../glut-3.5/src/glut_tr10.c \
+ ../../glut-3.5/src/glut_tr24.c \
+ ../../glut-3.5/src/glut_bitmap.c \
+ ../../glut-3.5/src/glut_bwidth.c
+
+GLFW_LIB = \
+ cgx_glut_glfw.c
+
+CPP_SRC = \
+ uselibSNL.cpp \
+ generateTet.cpp \
+ $(wildcard ../../libSNL/src/*.cpp)
+
+OUT = ../../../bin/cgx_glfw
+
+SRCS = $(SLIB) $(ULIB) $(FONT_LIB) $(GLFW_LIB)
+OBJS = $(SRCS:.c=.o)
+CPP_OBJS = $(CPP_SRC:.cpp=.o)
+
+all: $(OUT)
+
+$(OUT): $(OBJS) $(CPP_OBJS)
+	@mkdir -p ../../../bin
+	$(CXX) $(CFLAGS) $(OBJS) $(CPP_OBJS) -o $(OUT) $(LFLAGS)
+	@echo ">>> SUCCESS: Built $(OUT) <<<"
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+%.o: %.cpp
+	$(CXX) $(CFLAGS) -c $< -o $@
+
+clean:
+	rm -f $(OBJS) $(CPP_OBJS) $(OUT)

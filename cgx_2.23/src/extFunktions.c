@@ -28,12 +28,14 @@
 #define     TEST            0   /* debugging */
 #define     TEST1           0   /* debugging, substitute nurbs is kept */
 
+#ifndef USE_GLFW
 extern Display       *dpy;
 extern int           dpycells;
 extern Colormap      cmap;
 extern XColor        *xcolor;
 extern unsigned long *pixels_return;
 extern unsigned int  npixels;
+#endif
 
 extern int   w0, w1;                                      /* Fenster identifier  */
 extern int   activWindow;                                 /* das aktuelle Fenster */
@@ -405,17 +407,20 @@ void getScaleValues( int setNr, Sets *set, Points *point, Nodes *node, Scale *sc
     if (node[i].nz < scale->zmin) scale->zmin=node[i].nz;
     }
   }
-  for (j=0; j<set[setNr].anz_p; j++ )
+  if(point)
   {
-    i=set[setNr].pnt[j];
-    if(point[i].name!=NULL)
+    for (j=0; j<set[setNr].anz_p; j++ )
     {
-    if (point[i].px > scale->xmax) scale->xmax=point[i].px;
-    if (point[i].px < scale->xmin) scale->xmin=point[i].px;
-    if (point[i].py > scale->ymax) scale->ymax=point[i].py;
-    if (point[i].py < scale->ymin) scale->ymin=point[i].py;
-    if (point[i].pz > scale->zmax) scale->zmax=point[i].pz;
-    if (point[i].pz < scale->zmin) scale->zmin=point[i].pz;
+      i=set[setNr].pnt[j];
+      if(point[i].name!=NULL)
+      {
+      if (point[i].px > scale->xmax) scale->xmax=point[i].px;
+      if (point[i].px < scale->xmin) scale->xmin=point[i].px;
+      if (point[i].py > scale->ymax) scale->ymax=point[i].py;
+      if (point[i].py < scale->ymin) scale->ymin=point[i].py;
+      if (point[i].pz > scale->zmax) scale->zmax=point[i].pz;
+      if (point[i].pz < scale->zmin) scale->zmin=point[i].pz;
+      }
     }
   }
 
@@ -462,23 +467,23 @@ void defineColTextur_load(float alpha)
     buf=i;
     if(!flipColorFlag)
     {
-      if(scale->smaxr==2) buf++;
+      if(scale && scale->smaxr==2) buf++;
       define_rgb( (float)buf/(steps-1), &r,&g,&b);
     }
     else
     {
-      if(scale->sminr==2) buf--;
+      if(scale && scale->sminr==2) buf--;
       define_rgb( (steps-1-(float)buf)/(steps-1.), &r,&g,&b);
     }
     
-    if(i>=steps-1 && scale->smaxr==2)
+    if(i>=steps-1 && scale && scale->smaxr==2)
     {
     contur_tex[n]  =entitycol[col_maxc].r;
     contur_tex[n+1]=entitycol[col_maxc].g;
     contur_tex[n+2]=entitycol[col_maxc].b;
     contur_tex[n+3]=alpha;
     }
-    else if(i<=0 && scale->sminr==2)
+    else if(i<=0 && scale && scale->sminr==2)
     {
     contur_tex[n]  =entitycol[col_minc].r;
     contur_tex[n+1]=entitycol[col_minc].g;
@@ -498,14 +503,14 @@ void defineColTextur_load(float alpha)
   }
   for (; i<TEX_PIXELS; i++)
   {
-    if(i>=steps-1 && scale->smaxr==2)
+    if(i>=steps-1 && scale && scale->smaxr==2)
     {
     contur_tex[n]  =entitycol[col_maxc].r;
     contur_tex[n+1]=entitycol[col_maxc].g;
     contur_tex[n+2]=entitycol[col_maxc].b;
     contur_tex[n+3]=alpha;
     }
-    else if(i<=0 && scale->sminr==2)
+    else if(i<=0 && scale && scale->sminr==2)
     {
     contur_tex[n]  =entitycol[col_minc].r;
     contur_tex[n+1]=entitycol[col_minc].g;

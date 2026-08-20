@@ -3336,7 +3336,7 @@ void drawFaces_edge( int num, int *name, Nodes *node, Faces *face, int color, ch
   if ( ipuf[0] == GL_FRONT ) dsloc*=-1;
   //printf("dsloc:%e\n",dsloc);
   glColor3d(color,color,color);
-  glLineWidth(1.);
+  glLineWidth(1.4f);
 
   for (i=0; i<num; i++ )
   {
@@ -3439,7 +3439,7 @@ void drawElem_edge( int num, int *name, Nodes *node, Elements *e_enqire, int col
   register int i;
 
   glColor3d(color,color,color);
-  glLineWidth(1.);
+  glLineWidth(1.4f);
 
 #if TEST
   printf ("in drawElemEdges\n");

@@ -1,5 +1,7 @@
 #include <extUtil.h>
 
+#ifndef USE_GLFW
+
 /*
   8.8.99 wi
 
@@ -172,6 +174,8 @@ void readStdCmap( Display **ptr_dpy, int *ptr_dpycells, Colormap *ptr_cmap, XCol
   printf ("DisplayPlanes=%d\n", DisplayPlanes( dpy, scn ));
 
 }
+
+#endif /* !USE_GLFW */
 
 
 

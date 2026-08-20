@@ -22,6 +22,8 @@
 
 #include <cgx.h>
 
+#ifndef USE_GLFW
+
 #define TEST        0
 
 extern Display       *dpy;
@@ -160,3 +162,5 @@ void storeColors(int anz_col, int pix )
     }
   }
 }
+
+#endif /* !USE_GLFW */

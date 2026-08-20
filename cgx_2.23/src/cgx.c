@@ -193,12 +193,14 @@ GLfloat   *contur_tex=NULL;
 struct utsname  cursys[1];
 int             bitplanes;            /*  colorbuffer depth */
 
+#ifndef USE_GLFW
 Display       *dpy;
 int           dpycells;
 Colormap      cmap;
 XColor        *xcolor;
 unsigned long *pixels_return;
 unsigned int  npixels;
+#endif
 double         priv_cmap[256][3];
 
 
@@ -235,15 +237,16 @@ int   col_maxc=DEF_COL,col_minc=DEF_COL;  /* colors of the regions with clipped 
 int   defScalMethod=0;         /* method to display the scale */
 int   basCol[3]={0,1,2};       /* color indexes due to basic colormap: 0=black 1=white 2=neutral (grey) */
 int   foregrndcol=0, backgrndcol=1;          /* default fore- and background color */
-double foregrndcol_rgb[4]={0.,0.,0.,1.};
-double backgrndcol_rgb[4]={1.,1.,1.,1.};
+double foregrndcol_rgb[4]={0., 0., 0., 1.};
+double backgrndcol_rgb[4]={1., 1., 1., 1.};
+int   perspectiveFlag=0;                     /* 0: Orthographic/Iso, 1: Perspective */
 char          entity_k[SET_COLS]={'k','w','n','r','g','b','y','m','t','c','o'};  /* predefined colors of entities */
 GLfloat       entity_r[SET_COLS]={ 0., 1., .6, 1., 0., 0., 1., 1., 0., .6, 1. };
 GLfloat       entity_g[SET_COLS]={ 0., 1., .6, .0, 1., 0., 1., 0., 1., .3, .5 };
 GLfloat       entity_b[SET_COLS]={ 0., 1., .6, .0, 0., 1., 0., 1., 1., .0, 0. };
 int entitycols;
 Entitycol *entitycol;
-GLfloat   edgeWidth=2;             /* width of the model edges, changed with 'view' */
+GLfloat   edgeWidth=2.5f;             /* width of the model edges, changed with 'view' */
 
 int   submenu_load=-1, submenu_view=-1, mainmenu=-1;        /* menu identifier */
 int   submenu_scala=-1, submenu_animate=-1, submenu_cut=-1, submenu_graph=-1, submenu_help=-1;
@@ -280,7 +283,7 @@ int   step_mode=0;                               /* if 1 read step data and writ
 int   centerNode=0;                    /* Nr of center Node, 0:no centernode */
 int   cmaps=7;                         /* nr of colormap names */
 char *cmap_names[] = {"classic", "jet", "turbo", "viridis", "inferno", "coolwarm", "gray"};   /* Colormap names */
-char  cmap_name[] = "classic";         /* default Colormap */
+char  cmap_name[MAX_LINE_LENGTH] = "classic";         /* default Colormap */
 char  inpformat=0;                     /* defines the start-up mode of cgx */
 char  allowSysFlag=ALLOW_SYS_FLAG;                  /* 1: allow the execution of system calls (sys command) */
 char  autoDivFlag=1;                   /* The div command will set it to 0 and no auto-div is executed */
@@ -1145,7 +1148,9 @@ void Mouse( int x, int y )
     {
     dtx*=ds;
     dty*=ds;
-    ds-= (beginy-dy)*ds;
+    ds+= (beginy-dy)*ds;
+    if (ds < 0.0001) ds = 0.0001;
+    if (ds > 1000.0) ds = 1000.0;
     dtx/=ds;
     dty/=ds;
     }
@@ -1363,16 +1368,18 @@ void MouseState( int button, int state, int x, int y )
     weelWasUsedFlag=1;
     if (movezFlag)
     {
-      dtz+= (0.05);
+      dtz-= (0.05);
     }
     else
     {
-    dtx*=ds;
-    dty*=ds;
-    ds+= (0.05)*ds;
-    dtx/=ds;
-    dty/=ds;
+      dtx*=ds;
+      dty*=ds;
+      ds*= 0.92; /* zoom in */
+      if (ds < 0.0001) ds = 0.0001;
+      dtx/=ds;
+      dty/=ds;
     }
+    glutPostRedisplay();
   }
   else
   if (button == GLUT_WEEL_DOWN )
@@ -1380,16 +1387,18 @@ void MouseState( int button, int state, int x, int y )
     weelWasUsedFlag=1;
     if (movezFlag)
     {
-      dtz-= (0.05);
+      dtz+= (0.05);
     }
     else
     {
-    dtx*=ds;
-    dty*=ds;
-    ds-= (0.05)*ds;
-    dtx/=ds;
-    dty/=ds;
+      dtx*=ds;
+      dty*=ds;
+      ds*= 1.08; /* zoom out */
+      if (ds > 1000.0) ds = 1000.0;
+      dtx/=ds;
+      dty/=ds;
     }
+    glutPostRedisplay();
   }
   else
   if (button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN)
@@ -1466,20 +1475,24 @@ void frame(void)
   if(!inpformat) return;
 
   /* nodes in definierten wertebereich scalieren wg. beleuchtung!  */
-  descalNodes( anz->n, node, scale);
-  descalPoints( anzGeo->p, point, scale);
-  descalSurfs( anzGeo->s, surf, scale);
+  if(anz && anz->n > 0 && node) descalNodes( anz->n, node, scale);
+  if(anzGeo && anzGeo->p > 0 && point) descalPoints( anzGeo->p, point, scale);
+  if(anzGeo && anzGeo->s > 0 && surf) descalSurfs( anzGeo->s, surf, scale);
   getScaleValues( setall, set, point, node, scale);
-  scalPoints ( anzGeo->p, point, scale );
-  scalNodes ( anz->n, node, scale );
-  scalSurfs( anzGeo->s, surf, scale);
+  if(anzGeo && anzGeo->p > 0 && point) scalPoints ( anzGeo->p, point, scale );
+  if(anz && anz->n > 0 && node) scalNodes ( anz->n, node, scale );
+  if(anzGeo && anzGeo->s > 0 && surf) scalSurfs( anzGeo->s, surf, scale);
   dtx=0.; dty=0.; dtz=0.; ds=0.5;
   for (i=0; i<4; i++) vmem[i]=0; /* reset all kompensations (center()) */
   /* recalculate the line-shapes */
-  for (i=0; i<anzGeo->l; i++) repLine(i);
-  for (i=0; i<anzGeo->nurl; i++) repNurl(i);
-  for (i=0; i<anzGeo->nurs; i++) repNurs(i);
+  if(anzGeo && anzGeo->l > 0 && line) for (i=0; i<anzGeo->l; i++) repLine(i);
+  if(anzGeo && anzGeo->nurl > 0 && nurl) for (i=0; i<anzGeo->nurl; i++) repNurl(i);
+  if(anzGeo && anzGeo->nurs > 0 && nurs) for (i=0; i<anzGeo->nurs; i++) repNurs(i);
+  updateDispLists();
+  glutSetWindow(w1);
+  activWindow=w1;
   redraw();
+  glutPostRedisplay();
 }
 
 
@@ -1528,6 +1541,9 @@ void frameSet(int setNrbuf)
   dty-=(wy-height_w1*.5)/(height_w1*.5);
 
   delSet(specialset->tmp);
+  glutSetWindow(w1);
+  activWindow=w1;
+  glutPostRedisplay();
 }
 
 
@@ -1537,7 +1553,6 @@ void menu( int selection )
   switch (selection) {
   case 1:
     frame();
-    frameSetFlag=-1;
     break;
   case 2:
     zoomFlag=!zoomFlag;
@@ -1556,6 +1571,9 @@ void menu( int selection )
     break;
   case 5:
     commandLineFlag=!commandLineFlag;
+#ifdef USE_GLFW
+    cgx_glfw_toggle_command_bar();
+#else
     /* Kommandozeile-Fenster-index im w0 fenster  */
     if(commandLineFlag)
     {
@@ -1566,6 +1584,7 @@ void menu( int selection )
       glShadeModel ( GL_FLAT );
     }
     else glutDestroyWindow(w3);
+#endif
     break;
   case 6:
     exit(0);
@@ -3881,7 +3900,7 @@ void createNewMainMenu(void)
     glutAddSubMenu  ( "Orientation ", submenu_orientation );
     glutAddSubMenu  ( "Hardcopy    ", submenu_hardcopy);
     glutAddSubMenu  ( "Help        ", submenu_help);
-    glutAddMenuEntry( "Toggle CommandLine", 5);
+    glutAddMenuEntry( "Toggle Command Line Bar", 5);
     glutAddMenuEntry( " -QUIT-     ", 6);
     glutAttachMenu(GLUT_LEFT_BUTTON);
   glutSetWindow( activWindow);
@@ -4313,16 +4332,27 @@ void selectView( int selection )
       redraw();
     break;
   case 11:
-    if(foregrndcol) { foregrndcol=0; foregrndcol_rgb[0]=foregrndcol_rgb[1]=foregrndcol_rgb[2]=foregrndcol_rgb[3]=0.; }
-    else            { foregrndcol=1; foregrndcol_rgb[0]=foregrndcol_rgb[1]=foregrndcol_rgb[2]=foregrndcol_rgb[3]=1.; }
-    if(backgrndcol) { backgrndcol=0; backgrndcol_rgb[0]=backgrndcol_rgb[1]=backgrndcol_rgb[2]=backgrndcol_rgb[3]=0.; }
-    else            { backgrndcol=1; backgrndcol_rgb[0]=backgrndcol_rgb[1]=backgrndcol_rgb[2]=backgrndcol_rgb[3]=1.; }
+    if(backgrndcol)
+    {
+      backgrndcol=0; foregrndcol=1;
+      backgrndcol_rgb[0]=0.05; backgrndcol_rgb[1]=0.07; backgrndcol_rgb[2]=0.10; backgrndcol_rgb[3]=1.0;
+      foregrndcol_rgb[0]=0.92; foregrndcol_rgb[1]=0.95; foregrndcol_rgb[2]=0.98; foregrndcol_rgb[3]=1.0;
+      printf("\n Dark Mode enabled.\n\n");
+    }
+    else
+    {
+      backgrndcol=1; foregrndcol=0;
+      backgrndcol_rgb[0]=1.0; backgrndcol_rgb[1]=1.0; backgrndcol_rgb[2]=1.0; backgrndcol_rgb[3]=1.0;
+      foregrndcol_rgb[0]=0.0; foregrndcol_rgb[1]=0.0; foregrndcol_rgb[2]=0.0; foregrndcol_rgb[3]=1.0;
+      printf("\n Light Mode enabled.\n\n");
+    }
     for (i=0; i<anzGeo->psets; i++ )
     {
       if(pset[i].col==0) pset[i].col=1;
       else if(pset[i].col==1) pset[i].col=0;
     }
     updateDispLists();
+    redraw();
     break;
   case 12:
     /* create a vector-plot */
@@ -4417,6 +4447,12 @@ void selectView( int selection )
     getElemNormalen( e_enqire, node, anz->e );
     makeSurfaces();
     updateDispLists();
+    break;
+  case 19:
+    perspectiveFlag = !perspectiveFlag;
+    if (perspectiveFlag) printf("\n Perspective 3D projection enabled.\n\n");
+    else printf("\n Orthographic (Iso) projection enabled.\n\n");
+    redraw();
     break;
   }
   glutSetWindow( w0);
@@ -4549,6 +4585,18 @@ void pre_view(char *string)
     glGetIntegerv( GL_POLYGON_MODE, ipuf );
     if ( ipuf[1] != GL_POINT )
       glPolygonMode( GL_FRONT_AND_BACK, GL_POINT );
+  }
+  else if (compare(type, "persp", 4)==4)
+  {
+    perspectiveFlag = 1;
+    printf("\n Perspective 3D projection enabled.\n\n");
+    redraw();
+  }
+  else if (compare(type, "ortho", 4)==4 || compare(type, "iso", 3)==3)
+  {
+    perspectiveFlag = 0;
+    printf("\n Orthographic (Iso) projection enabled.\n\n");
+    redraw();
   }
   else if (compare(type, "bg", 2)==2)
   {
@@ -5695,6 +5743,89 @@ void Keyboard( unsigned char gkey, int x, int y )
   }
 }
 
+/* Directly execute a command string from the GLFW command bar or terminal */
+void cgx_execute_command_string(const char *cmd_str)
+{
+  if (!cmd_str || strlen(cmd_str) < 1) return;
+  int pos = 0, new_elems = 0, gtolFlag = 0;
+  static char prognam[MAX_LINE_LENGTH];
+  char k_buf[MAX_LINE_LENGTH];
+  char *k_ptr = k_buf;
+  
+  strncpy(k_buf, cmd_str, MAX_LINE_LENGTH - 1);
+  k_buf[MAX_LINE_LENGTH - 1] = '\0';
+  
+  /* Trim trailing newline / carriage return / spaces */
+  int len = (int)strlen(k_buf);
+  while (len > 0 && (k_buf[len - 1] == '\n' || k_buf[len - 1] == '\r' || k_buf[len - 1] == ' '))
+  {
+    k_buf[--len] = '\0';
+  }
+  if (len < 1) return;
+
+  printf("cgx> %s\n", k_buf);
+
+  /* Add to history */
+  if ((key_history = (char **)realloc((char **)key_history, (nkey_history + 2) * sizeof(char *))) != NULL)
+  {
+    if ((key_history[nkey_history] = (char *)malloc(MAX_LINE_LENGTH * sizeof(char))) != NULL)
+    {
+      strcpy(key_history[nkey_history], k_buf);
+      nkey_history++;
+      key_pointer = nkey_history;
+    }
+  }
+
+  pos = sword(k_buf, prognam);
+  for (int j = 0; j < (int)strlen(prognam); j++) prognam[j] = toupper(prognam[j]);
+
+  if (compare(prognam, "HELP", 4) == 4) help();
+  else if (compare(prognam, "QADD", 4) == 4) qadd(&k_buf[pos + 1]);
+  else if (compare(prognam, "QALI", 4) == 4) qali();
+  else if (compare(prognam, "QBIA", 4) == 4) qbia();
+  else if (compare(prognam, "QBOD", 4) == 4) qbod(&k_buf[pos + 1]);
+  else if (compare(prognam, "QCNT", 4) == 4) qcnt();
+  else if (compare(prognam, "QCUT", 4) == 4) qcut();
+  else if (compare(prognam, "QDEL", 4) == 4) qdel();
+  else if (compare(prognam, "QDIV", 4) == 4) qdiv();
+  else if (compare(prognam, "QDIS", 4) == 4) qdis();
+  else if (compare(prognam, "QMSH", 4) == 4) qmsh();
+  else if (compare(prognam, "QENQ", 4) == 4) qenq();
+  else if (compare(prognam, "QFIL", 4) == 4) qfil(&k_buf[pos + 1]);
+  else if (compare(prognam, "QFLP", 4) == 4) qflp();
+  else if (compare(prognam, "QINT", 4) == 4) qint();
+  else if (compare(prognam, "QLIN", 4) == 4) qlin(&k_buf[pos + 1]);
+  else if (compare(prognam, "QPNT", 4) == 4) qpnt(&k_buf[pos + 1]);
+  else if (compare(prognam, "QMOV", 4) == 4) qmov(&k_buf[pos + 1]);
+  else if (compare(prognam, "QNOD", 4) == 4) qnod();
+  else if (compare(prognam, "QNOR", 4) == 4) qnor();
+  else if (compare(prognam, "QREM", 4) == 4) qrem(&k_buf[pos + 1]);
+  else if (compare(prognam, "QSUR", 4) == 4) qsur(&k_buf[pos + 1]);
+  else if (compare(prognam, "QSEQ", 4) == 4) qseq(&k_buf[pos + 1]);
+  else if (compare(prognam, "QPLN", 4) == 4) qshp(&k_buf[pos + 1]);
+  else if (compare(prognam, "QSHP", 4) == 4) qshp(&k_buf[pos + 1]);
+  else if (compare(prognam, "QSPL", 4) == 4) qspl();
+  else if (compare(prognam, "QTXT", 4) == 4) qtxt();
+  else
+  {
+    commandoInterpreter(prognam, &k_ptr, pos, 0, 0, 0, &gtolFlag);
+    if (compare(prognam, "ELEM", 4) == 4) new_elems = 1;
+  }
+
+  if (new_elems)
+  {
+    new_elems = 0;
+    for (int i = anz->orign; i < anz->n; i++) node[node[i].nr].pflag = -1;
+    anz->n = anz->orign;
+    anz->nmax = anz->orignmax;
+    adjustDrawNodes(1);
+    getElemNormalen(e_enqire, node, anz->e);
+    makeSurfaces();
+    realloc_colNr();
+    updateDispLists();
+  }
+  glutPostRedisplay();
+}
 
 
 void initModel(char *string)
@@ -5748,7 +5879,25 @@ void center(double x, double y, double z)
 
 void moveModel()
 {
-  glOrtho( -ds*aspectRatio_w1, ds*aspectRatio_w1, -ds, ds, -Z_DEPTH, Z_DEPTH ); /* nach glLoadIdentity() !! */
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  if (perspectiveFlag)
+  {
+    double aspect = (aspectRatio_w1 > 0.001) ? aspectRatio_w1 : 1.0;
+    double fov = 40.0;
+    double cam_dist = ds * 2.0;
+    if (cam_dist < 0.0001) cam_dist = 0.0001;
+    gluPerspective(fov, aspect, 0.001, 1000.0);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glTranslated(0.0, 0.0, -cam_dist);
+  }
+  else
+  {
+    glOrtho( -ds*aspectRatio_w1, ds*aspectRatio_w1, -ds, ds, -Z_DEPTH, Z_DEPTH );
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+  }
   
   v[0]= centerPnt[0] ;            /* nodes sind scaliert, sonst scalieren mit scalNodes() */
   v[1]= centerPnt[1] ;
@@ -5849,7 +5998,7 @@ void DrawGraficLoad( void )
     glEnd();
   }
   glutSwapBuffers();
-  if(frameSetFlag>-2) { frameSet(frameSetFlag); frameSetFlag=-2; goto redraw; }
+  if(frameSetFlag>-2) { int fset=frameSetFlag; frameSetFlag=-2; frameSet(fset); goto redraw; }
   if((cur_commandFile>-1)&&(flipflop)) goto redraw;
 
   if((movieFlag>0)&&(!stopFlag))
@@ -5917,7 +6066,7 @@ void DrawGraficLight( void )
     glEnd();
   }
   glutSwapBuffers();
-  if(frameSetFlag>-2) { frameSet(frameSetFlag); frameSetFlag=-2;  goto redraw; }
+  if(frameSetFlag>-2) { int fset=frameSetFlag; frameSetFlag=-2; frameSet(fset); goto redraw; }
   if((cur_commandFile>-1)&&(flipflop)) goto redraw;
 
   if((movieFlag>0)&&(!stopFlag))
@@ -5998,7 +6147,7 @@ void DrawGraficAnimate( void )
     glEnd();
   }
   glutSwapBuffers();
-  if(frameSetFlag>-2) { frameSet(frameSetFlag); frameSetFlag=-2; goto movieLoop; }
+  if(frameSetFlag>-2) { int fset=frameSetFlag; frameSetFlag=-2; frameSet(fset); goto movieLoop; }
   if((cur_commandFile>-1)&&(flipflop)) goto movieLoop;
 
   // keeps animation going when the mouse is in w1 
@@ -6152,7 +6301,7 @@ void DrawGraficSequence( void )
     glEnd();
   }
   glutSwapBuffers();
-  if(frameSetFlag>-2) { frameSet(frameSetFlag); frameSetFlag=-2; goto movieLoop; }
+  if(frameSetFlag>-2) { int fset=frameSetFlag; frameSetFlag=-2; frameSet(fset); goto movieLoop; }
   if((cur_commandFile>-1)&&(flipflop)) goto movieLoop;
 
   if ( activWindow==w1 )  glutPostRedisplay();
@@ -6237,7 +6386,7 @@ void DrawPickedItems()
     glEnd();
   }
   glutSwapBuffers();
-  if(frameSetFlag>-2) { frameSet(frameSetFlag); frameSetFlag=-2; DrawPickedItems(); goto redraw; }
+  if(frameSetFlag>-2) { int fset=frameSetFlag; frameSetFlag=-2; frameSet(fset); DrawPickedItems(); goto redraw; }
   if((cur_commandFile>-1)&&(flipflop)) goto redraw;
 
   if((movieFlag>0)&&(!stopFlag))
@@ -6361,48 +6510,64 @@ void DrawAxes()
 #endif 
 
   glClearColor ( backgrndcol_rgb[0], backgrndcol_rgb[1], backgrndcol_rgb[2], backgrndcol_rgb[3] );
-  glClear(GL_COLOR_BUFFER_BIT );
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
+  glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  glOrtho( -1., 1., -1., 1., -1., 1. ); /* nach glLoadIdentity() !! */
+  glOrtho( -1.2, 1.2, -1.2, 1.2, -2.0, 2.0 );
 
-    v[0]= centerPnt[0] ;            /* nodes sind scaliert, sonst scalieren mit scalNodes() */
-    v[1]= centerPnt[1] ;
-    v[2]= centerPnt[2] ;
-    v[3]=1.;
-    m_sub( &dR[0][0], &R[0][0], &Rmem[0][0] );
-    v_matmult( v, &dR[0][0] );
-    glMultMatrixd( &R[0][0] );
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  glMultMatrixd( &R[0][0] );
 
-    glColor3dv( foregrndcol_rgb );
-    glBegin ( GL_LINE_STRIP );
-     glVertex3d(0.,.5,0.);
-     glVertex3d(0.,0.,0.);
-     glVertex3d(.5,0.,0.);
-    glEnd();
-    glBegin ( GL_LINES );
-     glVertex3d(0.,0.,0.);
-     glVertex3d(0.,0.,.5);
-    glEnd();
-  
-    text( .5, 0., 0., "X ", glut_font[legend_font] );
-    text( 0., .5, 0., "Y ", glut_font[legend_font] );
-    text( 0., 0., .5, "Z ", glut_font[legend_font] );
+  glLineWidth(3.0f);
+
+  /* X axis - Vibrant Red */
+  glColor3f(0.95f, 0.25f, 0.25f);
+  glBegin ( GL_LINES );
+    glVertex3d(0.,0.,0.);
+    glVertex3d(.65,0.,0.);
+  glEnd();
+  text( .75, 0., 0., "X", glut_font[legend_font] );
+
+  /* Y axis - Vibrant Green */
+  glColor3f(0.25f, 0.88f, 0.35f);
+  glBegin ( GL_LINES );
+    glVertex3d(0.,0.,0.);
+    glVertex3d(0.,.65,0.);
+  glEnd();
+  text( 0., .75, 0., "Y", glut_font[legend_font] );
+
+  /* Z axis - Vibrant Cyan/Blue */
+  glColor3f(0.30f, 0.70f, 1.0f);
+  glBegin ( GL_LINES );
+    glVertex3d(0.,0.,0.);
+    glVertex3d(0.,0.,.65);
+  glEnd();
+  text( 0., 0., .75, "Z", glut_font[legend_font] );
 
   if(drawMode!=4)
   {
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho( -1., 1., -1., 1., -1., 1. );
+    glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     if(surfFlag) sprintf (buffer,"s");
     else         sprintf (buffer,"v");
     glColor3dv( foregrndcol_rgb );
-    text( -1, -1, 0.,buffer, glut_font[legend_font] );
+    text( -0.9, -0.9, 0.,buffer, glut_font[legend_font] );
   }    
   if (movezFlag)
   {
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho( -1., 1., -1., 1., -1., 1. );
+    glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     sprintf (buffer,"%.2f",(dtz-2.)*scale->w);
     glColor3dv( foregrndcol_rgb );
-    text( -0.5, -1, 0.,buffer, glut_font[legend_font] );
+    text( -0.5, -0.9, 0.,buffer, glut_font[legend_font] );
   }    
   glutSwapBuffers();
 }
@@ -7481,7 +7646,7 @@ int main( int argc, char **argv )
   /* problems with xwd on sgi without GLUT_DEPTH */
   glutInitDisplayMode ( GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH );
   glutInit ( &argc, argv );
-  sprintf (buffer, "CalculiX GraphiX");
+  sprintf (buffer, "CalculiX GraphiX (new Engine)");
   activWindow= w0 = glutCreateWindow ( buffer );
   glutDisplayFunc ( DrawMenuSet );
   glShadeModel ( GL_FLAT );
@@ -7536,12 +7701,13 @@ int main( int argc, char **argv )
   glutAddMenuEntry("Toggle Element Edges", 8);
   glutAddMenuEntry("Toggle Surfaces/Volumes", 9);
   glutAddMenuEntry("Toggle Move-Z/Zoom", 10);
-  glutAddMenuEntry("Toggle Background Color", 11);
+  glutAddMenuEntry("Toggle Dark Mode / Light Mode", 11);
   glutAddMenuEntry("Toggle Vector-Plot", 12);
   glutAddMenuEntry("Toggle Add-Displacement", 13);
   glutAddMenuEntry("Toggle Shaded Results", 14);
   glutAddMenuEntry("Toggle Transparency", 16);
   glutAddMenuEntry("Toggle Ruler", 17);
+  glutAddMenuEntry("Toggle Perspective / Ortho View", 19);
   glutAddSubMenu  ("Colormap", subsubmenu_colormap );
 
   submenu_animate = glutCreateMenu( changeAnimation );
