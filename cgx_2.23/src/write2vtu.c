@@ -85,6 +85,21 @@ static void calc_principal_and_mises(double sxx, double syy, double szz,
   *p3 = r3;
 }
 
+/* Node permutation map from CGX element node ordering to VTK standard ordering */
+static const int vtk_map_hex20[20] = {
+  0, 1, 2, 3, 4, 5, 6, 7,        /* Corners: 0-7 */
+  8, 9, 10, 11,                  /* Bottom edges: 0-1, 1-2, 2-3, 3-0 */
+  16, 17, 18, 19,                /* Top edges in VTK (CGX 16..19) */
+  12, 13, 14, 15                 /* Vertical edges in VTK (CGX 12..15) */
+};
+
+static const int vtk_map_penta15[15] = {
+  0, 1, 2, 3, 4, 5,              /* Corners: bottom 0-2, top 3-5 */
+  6, 7, 8,                       /* Bottom edges */
+  12, 13, 14,                    /* Top edges in VTK (CGX 12..14) */
+  9, 10, 11                      /* Vertical edges in VTK (CGX 9..11) */
+};
+
 /* Map CGX element types to VTK cell types */
 static int get_vtk_cell_type(int cgx_type, int *num_nodes)
 {
@@ -154,7 +169,11 @@ static int write_single_vtu_file(const char *filename, int target_step,
     fprintf(fp, "         ");
     for (j = 0; j < n_nodes; j++)
     {
-      nid = elem[eid].nod[j];
+      int map_idx = j;
+      if (elem[eid].type == 4) map_idx = vtk_map_hex20[j];
+      else if (elem[eid].type == 5) map_idx = vtk_map_penta15[j];
+
+      nid = elem[eid].nod[map_idx];
       fprintf(fp, " %d", (nid >= 0 && nid <= anz->nmax) ? nodeMap[nid] : 0);
     }
     fprintf(fp, "\n");
