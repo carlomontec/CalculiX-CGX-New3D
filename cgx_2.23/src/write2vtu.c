@@ -28,6 +28,21 @@ extern int cur_lc;
 int readfrdblock( int lc, Summen *anz, Nodes *node, Datasets *lcase );
 void calcDatasets( int num_olc, Summen *anz, Nodes *node, Datasets *lcase );
 
+/* Node permutation map from CGX element node ordering to VTK standard ordering */
+static const int vtk_map_hex20[20] = {
+  0, 1, 2, 3, 4, 5, 6, 7,        /* Corners: 0-7 */
+  8, 9, 10, 11,                  /* Bottom edges: 0-1, 1-2, 2-3, 3-0 */
+  16, 17, 18, 19,                /* Top edges in VTK (CGX 16..19) */
+  12, 13, 14, 15                 /* Vertical edges in VTK (CGX 12..15) */
+};
+
+static const int vtk_map_penta15[15] = {
+  0, 1, 2, 3, 4, 5,              /* Corners: bottom 0-2, top 3-5 */
+  6, 7, 8,                       /* Bottom edges */
+  12, 13, 14,                    /* Top edges in VTK (CGX 12..14) */
+  9, 10, 11                      /* Vertical edges in VTK (CGX 9..11) */
+};
+
 /* Calculate Principal Stresses P1 >= P2 >= P3 and von Mises stress analytically */
 static void calc_principal_and_mises(double sxx, double syy, double szz,
                                      double sxy, double syz, double szx,
@@ -85,21 +100,6 @@ static void calc_principal_and_mises(double sxx, double syy, double szz,
   *p3 = r3;
 }
 
-/* Node permutation map from CGX element node ordering to VTK standard ordering */
-static const int vtk_map_hex20[20] = {
-  0, 1, 2, 3, 4, 5, 6, 7,        /* Corners: 0-7 */
-  8, 9, 10, 11,                  /* Bottom edges: 0-1, 1-2, 2-3, 3-0 */
-  16, 17, 18, 19,                /* Top edges in VTK (CGX 16..19) */
-  12, 13, 14, 15                 /* Vertical edges in VTK (CGX 12..15) */
-};
-
-static const int vtk_map_penta15[15] = {
-  0, 1, 2, 3, 4, 5,              /* Corners: bottom 0-2, top 3-5 */
-  6, 7, 8,                       /* Bottom edges */
-  12, 13, 14,                    /* Top edges in VTK (CGX 12..14) */
-  9, 10, 11                      /* Vertical edges in VTK (CGX 9..11) */
-};
-
 /* Map CGX element types to VTK cell types */
 static int get_vtk_cell_type(int cgx_type, int *num_nodes)
 {
@@ -121,8 +121,10 @@ static int get_vtk_cell_type(int cgx_type, int *num_nodes)
   }
 }
 
-/* Write a single .vtu file for a specific step or current dataset */
-static int write_single_vtu_file(const char *filename, int target_step,
+/* Write a single .vtu file for a given physical step */
+static int write_single_vtu_file(const char *filename,
+                                 int num_step_lcs, int *step_lc_indices,
+                                 double step_val, int step_num, int analysis_type,
                                  Summen *anz, Nodes *node, Elements *elem,
                                  Sets *set, int setNr, Datasets *lcase,
                                  int num_pts, int *pts_nodenr, int *nodeMap,
@@ -144,6 +146,34 @@ static int write_single_vtu_file(const char *filename, int target_step,
   fprintf(fp, "<?xml version=\"1.0\"?>\n");
   fprintf(fp, "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n");
   fprintf(fp, "  <UnstructuredGrid>\n");
+
+  /* Global / Step Metadata (FieldData placed directly under UnstructuredGrid) */
+  fprintf(fp, "    <FieldData>\n");
+  if (analysis_type >= 2)
+  {
+    /* Modal / Frequency Analysis */
+    fprintf(fp, "      <DataArray type=\"Float64\" Name=\"Frequency_Hz\" NumberOfTuples=\"1\" format=\"ascii\">\n");
+    fprintf(fp, "        %.6f\n", step_val);
+    fprintf(fp, "      </DataArray>\n");
+    fprintf(fp, "      <DataArray type=\"Int32\" Name=\"Mode_Number\" NumberOfTuples=\"1\" format=\"ascii\">\n");
+    fprintf(fp, "        %d\n", step_num);
+    fprintf(fp, "      </DataArray>\n");
+    fprintf(fp, "      <DataArray type=\"Float64\" Name=\"Angular_Frequency_rad_s\" NumberOfTuples=\"1\" format=\"ascii\">\n");
+    fprintf(fp, "        %.6f\n", 2.0 * M_PI * step_val);
+    fprintf(fp, "      </DataArray>\n");
+  }
+  else
+  {
+    /* Static / Transient Analysis */
+    fprintf(fp, "      <DataArray type=\"Float64\" Name=\"Time\" NumberOfTuples=\"1\" format=\"ascii\">\n");
+    fprintf(fp, "        %.6f\n", step_val);
+    fprintf(fp, "      </DataArray>\n");
+    fprintf(fp, "      <DataArray type=\"Int32\" Name=\"Step_Number\" NumberOfTuples=\"1\" format=\"ascii\">\n");
+    fprintf(fp, "        %d\n", step_num);
+    fprintf(fp, "      </DataArray>\n");
+  }
+  fprintf(fp, "    </FieldData>\n");
+
   fprintf(fp, "    <Piece NumberOfPoints=\"%d\" NumberOfCells=\"%d\">\n", num_pts, num_elems);
 
   /* 1. Point Coordinates */
@@ -205,16 +235,12 @@ static int write_single_vtu_file(const char *filename, int target_step,
 
   /* 3. Point Data Fields */
   fprintf(fp, "      <PointData>\n");
-  if (anz->l > 0 && lcase != NULL)
+  if (anz->l > 0 && lcase != NULL && num_step_lcs > 0)
   {
-    for (lc = 0; lc < anz->l; lc++)
+    for (k = 0; k < num_step_lcs; k++)
     {
-      /* Filter datasets by target_step if specified (target_step > 0) */
-      if (target_step > 0 && lcase[lc].step_number != target_step) continue;
-      if (target_step == 0 && lc != cur_lc && anz->l > 1)
-      {
-        if (lcase[lc].step_number != lcase[cur_lc].step_number) continue;
-      }
+      lc = step_lc_indices[k];
+      if (lc < 0 || lc >= anz->l) continue;
 
       /* Ensure dataset is loaded in memory */
       if (!lcase[lc].loaded)
@@ -309,6 +335,17 @@ static int write_single_vtu_file(const char *filename, int target_step,
         fprintf(fp, "        </DataArray>\n");
       }
     }
+
+    /* Include Frequency_Hz as accessible PointData field for modal analysis */
+    if (analysis_type >= 2)
+    {
+      fprintf(fp, "        <DataArray type=\"Float32\" Name=\"Frequency_Hz\" NumberOfComponents=\"1\" format=\"ascii\">\n");
+      for (i = 0; i < num_pts; i++)
+      {
+        fprintf(fp, "          %.6e\n", step_val);
+      }
+      fprintf(fp, "        </DataArray>\n");
+    }
   }
   fprintf(fp, "      </PointData>\n");
 
@@ -340,8 +377,18 @@ static int write_single_vtu_file(const char *filename, int target_step,
   return 1;
 }
 
-/* Main entry point for send <set> vtu [all] */
-int write2vtu(char *setname, int strings, char **string, Summen *anz,
+/* Structure to group datasets belonging to the same physical step/frame */
+typedef struct {
+  int    step_number;
+  int    analysis_type;
+  double value;
+  char   name[MAX_LINE_LENGTH];
+  int    num_lcs;
+  int    lcs[64];
+} PhysStep;
+
+/* Main entry point for send <set> vtu/vtk [all] */
+int write2vtu(char *setname, char *format, int strings, char **string, Summen *anz,
               Nodes *node, Faces *face, Elements *elem, Sets *set, Datasets *lcase)
 {
   int setNr, i, j, k, eid, nid, n_nodes, vtk_type;
@@ -350,11 +397,17 @@ int write2vtu(char *setname, int strings, char **string, Summen *anz,
   int *pts_nodenr = NULL;
   int *elem_indices = NULL;
   int export_all_steps = 0;
-  int num_steps = 0, *step_list = NULL;
-  double *step_times = NULL;
+  char ext[8] = "vtu";
   char vtu_filename[MAX_LINE_LENGTH];
   char pvd_filename[MAX_LINE_LENGTH];
   FILE *pvd_fp = NULL;
+
+  PhysStep *psteps = NULL;
+  int num_psteps = 0;
+  int active_pstep = 0;
+
+  if (format != NULL && compare(format, "vtk", 3) == 3) strcpy(ext, "vtk");
+  else if (format != NULL && compare(format, "vtu", 3) == 3) strcpy(ext, "vtu");
 
   if (anz->n == 0 || anz->e == 0)
   {
@@ -378,7 +431,7 @@ int write2vtu(char *setname, int strings, char **string, Summen *anz,
     }
   }
 
-  printf("\n=== Exporting to VTK XML Unstructured Grid (.vtu) ===\n");
+  printf("\n=== Exporting to VTK XML Unstructured Grid (.%s) ===\n", ext);
   printf("Set: %s (mode: %s)\n", setname, export_all_steps ? "all steps (.pvd)" : "active step (.vtu)");
 
   /* 1. Identify Elements in Set */
@@ -427,28 +480,60 @@ int write2vtu(char *setname, int strings, char **string, Summen *anz,
     }
   }
 
-  /* 3. Export Data */
-  if (export_all_steps && anz->l > 0)
+  /* 3. Group Datasets into Physical Steps / Frames */
+  if (anz->l > 0 && lcase != NULL)
   {
-    /* Find unique steps */
-    step_list = (int *)malloc(anz->l * sizeof(int));
-    step_times = (double *)malloc(anz->l * sizeof(double));
+    psteps = (PhysStep *)calloc(anz->l, sizeof(PhysStep));
     for (i = 0; i < anz->l; i++)
     {
-      int step = lcase[i].step_number;
-      int exists = 0;
-      for (j = 0; j < num_steps; j++)
+      int matched = -1;
+
+      for (j = 0; j < num_psteps; j++)
       {
-        if (step_list[j] == step) { exists = 1; break; }
+        /* Datasets with same step_number belong to the same physical step/mode */
+        if (psteps[j].step_number == lcase[i].step_number)
+        {
+          matched = j;
+          break;
+        }
       }
-      if (!exists)
+
+      if (matched >= 0)
       {
-        step_list[num_steps] = step;
-        step_times[num_steps] = (double)lcase[i].value;
-        num_steps++;
+        if (psteps[matched].num_lcs < 64)
+        {
+          psteps[matched].lcs[psteps[matched].num_lcs++] = i;
+        }
+      }
+      else
+      {
+        psteps[num_psteps].step_number = lcase[i].step_number;
+        psteps[num_psteps].analysis_type = lcase[i].analysis_type;
+        psteps[num_psteps].value = (double)lcase[i].value;
+        strcpy(psteps[num_psteps].name, lcase[i].analysis_name);
+        psteps[num_psteps].lcs[0] = i;
+        psteps[num_psteps].num_lcs = 1;
+        num_psteps++;
       }
     }
 
+    /* Find which physical step contains the current active dataset */
+    for (j = 0; j < num_psteps; j++)
+    {
+      for (k = 0; k < psteps[j].num_lcs; k++)
+      {
+        if (psteps[j].lcs[k] == cur_lc)
+        {
+          active_pstep = j;
+          break;
+        }
+      }
+    }
+  }
+
+  /* 4. Export Data */
+  if (export_all_steps && num_psteps > 0)
+  {
     /* Write PVD collection index file */
     sprintf(pvd_filename, "%s.pvd", setname);
     pvd_fp = fopen(pvd_filename, "w");
@@ -459,17 +544,34 @@ int write2vtu(char *setname, int strings, char **string, Summen *anz,
       fprintf(pvd_fp, "  <Collection>\n");
     }
 
-    /* Write individual step files */
-    for (i = 0; i < num_steps; i++)
+    /* Write individual physical step files */
+    for (i = 0; i < num_psteps; i++)
     {
-      sprintf(vtu_filename, "%s_step_%03d.vtu", setname, step_list[i]);
-      write_single_vtu_file(vtu_filename, step_list[i], anz, node, elem, set, setNr,
-                            lcase, num_pts, pts_nodenr, nodeMap, num_elems, elem_indices);
+      sprintf(vtu_filename, "%s_step_%03d.%s", setname, i + 1, ext);
+      write_single_vtu_file(vtu_filename, psteps[i].num_lcs, psteps[i].lcs,
+                            psteps[i].value, psteps[i].step_number, psteps[i].analysis_type,
+                            anz, node, elem, set, setNr, lcase,
+                            num_pts, pts_nodenr, nodeMap, num_elems, elem_indices);
 
       if (pvd_fp)
       {
+        /* In ParaView PVD, each frame MUST have a unique timestep value.
+           If time values are not strictly increasing (e.g. modal analysis with duplicate frequencies),
+           use the 1-based step index to ensure ParaView loads each mode as an independent frame. */
+        double tval = (double)(i + 1);
+        if (num_psteps > 1 && psteps[num_psteps - 1].value > psteps[0].value)
+        {
+          /* Check if all time values are strictly increasing */
+          int strictly_increasing = 1;
+          for (j = 1; j < num_psteps; j++)
+          {
+            if (psteps[j].value <= psteps[j - 1].value) { strictly_increasing = 0; break; }
+          }
+          if (strictly_increasing) tval = psteps[i].value;
+        }
+
         fprintf(pvd_fp, "    <DataSet timestep=\"%.6f\" group=\"\" part=\"0\" file=\"%s\"/>\n",
-                step_times[i], vtu_filename);
+                tval, vtu_filename);
       }
     }
 
@@ -478,22 +580,32 @@ int write2vtu(char *setname, int strings, char **string, Summen *anz,
       fprintf(pvd_fp, "  </Collection>\n");
       fprintf(pvd_fp, "</VTKFile>\n");
       fclose(pvd_fp);
-      printf("  -> Written PVD collection: %s (%d steps)\n", pvd_filename, num_steps);
+      printf("  -> Written PVD collection: %s (%d physical steps)\n", pvd_filename, num_psteps);
     }
-
-    free(step_list);
-    free(step_times);
   }
   else
   {
     /* Single active step / mesh */
-    sprintf(vtu_filename, "%s.vtu", setname);
-    write_single_vtu_file(vtu_filename, 0, anz, node, elem, set, setNr,
-                          lcase, num_pts, pts_nodenr, nodeMap, num_elems, elem_indices);
+    sprintf(vtu_filename, "%s.%s", setname, ext);
+    if (num_psteps > 0)
+    {
+      write_single_vtu_file(vtu_filename, psteps[active_pstep].num_lcs, psteps[active_pstep].lcs,
+                            psteps[active_pstep].value, psteps[active_pstep].step_number, psteps[active_pstep].analysis_type,
+                            anz, node, elem, set, setNr, lcase,
+                            num_pts, pts_nodenr, nodeMap, num_elems, elem_indices);
+    }
+    else
+    {
+      write_single_vtu_file(vtu_filename, 0, NULL,
+                            0.0, 0, 0,
+                            anz, node, elem, set, setNr, lcase,
+                            num_pts, pts_nodenr, nodeMap, num_elems, elem_indices);
+    }
   }
 
   printf("=== VTK/VTU Export Complete ===\n\n");
 
+  if (psteps) free(psteps);
   free(nodeMap);
   free(pts_nodenr);
   return 1;

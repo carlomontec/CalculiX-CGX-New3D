@@ -23733,8 +23733,8 @@ void pre_write( char *record )
   {
     length= strsplt( record, ' ', &dat);
     descalNodes ( anz->n, node, scale);
-    if(length>2) write2vtu( setname, length-2, &dat[2], anz, node, face, e_enqire, set, lcase );
-    else write2vtu( setname, 0, NULL, anz, node, face, e_enqire, set, lcase );
+    if(length>2) write2vtu( setname, format, length-2, &dat[2], anz, node, face, e_enqire, set, lcase );
+    else write2vtu( setname, format, 0, NULL, anz, node, face, e_enqire, set, lcase );
     scalNodes ( anz->n, node, scale);
 
     /* free dat */
