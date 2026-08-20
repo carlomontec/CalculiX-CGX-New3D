@@ -407,7 +407,7 @@ void splitBiasDiv(int *ptrdiv, double *ptrbias);
 int improveBadTr3(char *setname);
 void printHash();
 int write2foam(char *setname, int strings, char **string, Summen *anz, Nodes *node, Faces *face, Elements *e_enqire, Sets *set, Datasets *lcase );
-int write2vtu(char *setname, char *format, int strings, char **string, Summen *anz, Nodes *node, Faces *face, Elements *e_enqire, Sets *set, Datasets *lcase );
+int write2vtu(char *setname, int strings, char **string, Summen *anz, Nodes *node, Faces *face, Elements *e_enqire, Sets *set, Datasets *lcase );
 int write2dolfyn(char *setname, int strings, char **string, Summen *anz, Nodes *node, Faces *face, Elements *e_enqire, Sets *set);
 int readFoam(char *datin, Summen *anz, Sets **sptr, Nodes **nptr, Elements **eptr, Datasets **lptr );
 int readVtk(char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets **lptr );

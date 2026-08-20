@@ -12,12 +12,13 @@
 /* --------------------------------------------------------------------  */
 
 /* write2vtu.c - Export mesh and field datasets to VTK XML Unstructured Grid (.vtu) */
-/* and ParaView Data collection (.pvd)                                               */
+/* and ParaView Data collection (.pvd) with Base64 Binary (default) & ASCII support  */
 
 #include <cgx.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <math.h>
 
 #ifndef M_PI
@@ -27,6 +28,47 @@
 extern int cur_lc;
 int readfrdblock( int lc, Summen *anz, Nodes *node, Datasets *lcase );
 void calcDatasets( int num_olc, Summen *anz, Nodes *node, Datasets *lcase );
+
+/* Base64 encoding table */
+static const char b64_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+/* Write a binary buffer as a Base64-encoded VTK data block (32-bit length header + payload) */
+static void write_base64_data_array(FILE *fp, const void *data, uint32_t num_bytes)
+{
+  uint32_t total_len = sizeof(uint32_t) + num_bytes;
+  unsigned char *buf = (unsigned char *)malloc(total_len);
+  uint32_t i;
+
+  if (!buf)
+  {
+    printf("ERROR: Out of memory in write_base64_data_array\n");
+    return;
+  }
+
+  /* Copy 32-bit length header in native little-endian */
+  memcpy(buf, &num_bytes, sizeof(uint32_t));
+  /* Copy payload */
+  if (num_bytes > 0 && data != NULL)
+  {
+    memcpy(buf + sizeof(uint32_t), data, num_bytes);
+  }
+
+  fprintf(fp, "\n          ");
+  for (i = 0; i < total_len; i += 3)
+  {
+    uint32_t b0 = buf[i];
+    uint32_t b1 = (i + 1 < total_len) ? buf[i + 1] : 0;
+    uint32_t b2 = (i + 2 < total_len) ? buf[i + 2] : 0;
+    uint32_t triple = (b0 << 16) | (b1 << 8) | b2;
+
+    fputc(b64_table[(triple >> 18) & 0x3F], fp);
+    fputc(b64_table[(triple >> 12) & 0x3F], fp);
+    fputc((i + 1 < total_len) ? b64_table[(triple >> 6) & 0x3F] : '=', fp);
+    fputc((i + 2 < total_len) ? b64_table[triple & 0x3F] : '=', fp);
+  }
+  fprintf(fp, "\n        ");
+  free(buf);
+}
 
 /* Node permutation map from CGX element node ordering to VTK standard ordering */
 static const int vtk_map_hex20[20] = {
@@ -125,6 +167,7 @@ static int get_vtk_cell_type(int cgx_type, int *num_nodes)
 static int write_single_vtu_file(const char *filename,
                                  int num_step_lcs, int *step_lc_indices,
                                  double step_val, int step_num, int analysis_type,
+                                 int is_binary,
                                  Summen *anz, Nodes *node, Elements *elem,
                                  Sets *set, int setNr, Datasets *lcase,
                                  int num_pts, int *pts_nodenr, int *nodeMap,
@@ -136,6 +179,14 @@ static int write_single_vtu_file(const char *filename,
   double sxx, syy, szz, sxy, syz, szx;
   double p1, p2, p3, vm;
 
+  /* Buffers for binary encoding */
+  double *f64_buf = NULL;
+  float  *f32_buf = NULL;
+  int64_t *i64_buf = NULL;
+  int32_t *i32_buf = NULL;
+  uint8_t *u8_buf = NULL;
+  int total_conn = 0;
+
   fp = fopen(filename, "w");
   if (!fp)
   {
@@ -144,7 +195,7 @@ static int write_single_vtu_file(const char *filename,
   }
 
   fprintf(fp, "<?xml version=\"1.0\"?>\n");
-  fprintf(fp, "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n");
+  fprintf(fp, "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\" header_type=\"UInt32\">\n");
   fprintf(fp, "  <UnstructuredGrid>\n");
 
   /* Global / Step Metadata (FieldData placed directly under UnstructuredGrid) */
@@ -152,89 +203,48 @@ static int write_single_vtu_file(const char *filename,
   if (analysis_type >= 2)
   {
     /* Modal / Frequency Analysis */
-    fprintf(fp, "      <DataArray type=\"Float64\" Name=\"Frequency_Hz\" NumberOfTuples=\"1\" format=\"ascii\">\n");
-    fprintf(fp, "        %.6f\n", step_val);
-    fprintf(fp, "      </DataArray>\n");
-    fprintf(fp, "      <DataArray type=\"Int32\" Name=\"Mode_Number\" NumberOfTuples=\"1\" format=\"ascii\">\n");
-    fprintf(fp, "        %d\n", step_num);
-    fprintf(fp, "      </DataArray>\n");
-    fprintf(fp, "      <DataArray type=\"Float64\" Name=\"Angular_Frequency_rad_s\" NumberOfTuples=\"1\" format=\"ascii\">\n");
-    fprintf(fp, "        %.6f\n", 2.0 * M_PI * step_val);
-    fprintf(fp, "      </DataArray>\n");
+    double ang_freq = 2.0 * M_PI * step_val;
+    int32_t m_num = step_num;
+    fprintf(fp, "      <DataArray type=\"Float64\" Name=\"Frequency_Hz\" NumberOfTuples=\"1\" format=\"%s\">",
+            is_binary ? "binary" : "ascii");
+    if (is_binary) write_base64_data_array(fp, &step_val, sizeof(double));
+    else fprintf(fp, "\n          %.6f\n        ", step_val);
+    fprintf(fp, "</DataArray>\n");
+
+    fprintf(fp, "      <DataArray type=\"Int32\" Name=\"Mode_Number\" NumberOfTuples=\"1\" format=\"%s\">",
+            is_binary ? "binary" : "ascii");
+    if (is_binary) write_base64_data_array(fp, &m_num, sizeof(int32_t));
+    else fprintf(fp, "\n          %d\n        ", m_num);
+    fprintf(fp, "</DataArray>\n");
+
+    fprintf(fp, "      <DataArray type=\"Float64\" Name=\"Angular_Frequency_rad_s\" NumberOfTuples=\"1\" format=\"%s\">",
+            is_binary ? "binary" : "ascii");
+    if (is_binary) write_base64_data_array(fp, &ang_freq, sizeof(double));
+    else fprintf(fp, "\n          %.6f\n        ", ang_freq);
+    fprintf(fp, "</DataArray>\n");
   }
   else
   {
     /* Static / Transient Analysis */
-    fprintf(fp, "      <DataArray type=\"Float64\" Name=\"Time\" NumberOfTuples=\"1\" format=\"ascii\">\n");
-    fprintf(fp, "        %.6f\n", step_val);
-    fprintf(fp, "      </DataArray>\n");
-    fprintf(fp, "      <DataArray type=\"Int32\" Name=\"Step_Number\" NumberOfTuples=\"1\" format=\"ascii\">\n");
-    fprintf(fp, "        %d\n", step_num);
-    fprintf(fp, "      </DataArray>\n");
+    int32_t s_num = step_num;
+    fprintf(fp, "      <DataArray type=\"Float64\" Name=\"Time\" NumberOfTuples=\"1\" format=\"%s\">",
+            is_binary ? "binary" : "ascii");
+    if (is_binary) write_base64_data_array(fp, &step_val, sizeof(double));
+    else fprintf(fp, "\n          %.6f\n        ", step_val);
+    fprintf(fp, "</DataArray>\n");
+
+    fprintf(fp, "      <DataArray type=\"Int32\" Name=\"Step_Number\" NumberOfTuples=\"1\" format=\"%s\">",
+            is_binary ? "binary" : "ascii");
+    if (is_binary) write_base64_data_array(fp, &s_num, sizeof(int32_t));
+    else fprintf(fp, "\n          %d\n        ", s_num);
+    fprintf(fp, "</DataArray>\n");
   }
   fprintf(fp, "    </FieldData>\n");
 
   fprintf(fp, "    <Piece NumberOfPoints=\"%d\" NumberOfCells=\"%d\">\n", num_pts, num_elems);
-
-  /* 1. Point Coordinates */
-  fprintf(fp, "      <Points>\n");
-  fprintf(fp, "        <DataArray type=\"Float64\" Name=\"Points\" NumberOfComponents=\"3\" format=\"ascii\">\n");
-  for (i = 0; i < num_pts; i++)
-  {
-    nid = pts_nodenr[i];
-    fprintf(fp, "          %.9e %.9e %.9e\n", node[nid].nx, node[nid].ny, node[nid].nz);
-  }
-  fprintf(fp, "        </DataArray>\n");
-  fprintf(fp, "      </Points>\n");
-
-  /* 2. Cells (Topology, Offsets, Types) */
-  fprintf(fp, "      <Cells>\n");
-
-  /* Connectivity */
-  fprintf(fp, "        <DataArray type=\"Int64\" Name=\"connectivity\" format=\"ascii\">\n");
-  for (i = 0; i < num_elems; i++)
-  {
-    eid = elem_indices[i];
-    vtk_type = get_vtk_cell_type(elem[eid].type, &n_nodes);
-    fprintf(fp, "         ");
-    for (j = 0; j < n_nodes; j++)
-    {
-      int map_idx = j;
-      if (elem[eid].type == 4) map_idx = vtk_map_hex20[j];
-      else if (elem[eid].type == 5) map_idx = vtk_map_penta15[j];
-
-      nid = elem[eid].nod[map_idx];
-      fprintf(fp, " %d", (nid >= 0 && nid <= anz->nmax) ? nodeMap[nid] : 0);
-    }
-    fprintf(fp, "\n");
-  }
-  fprintf(fp, "        </DataArray>\n");
-
-  /* Offsets */
-  fprintf(fp, "        <DataArray type=\"Int64\" Name=\"offsets\" format=\"ascii\">\n");
-  offset = 0;
-  for (i = 0; i < num_elems; i++)
-  {
-    eid = elem_indices[i];
-    get_vtk_cell_type(elem[eid].type, &n_nodes);
-    offset += n_nodes;
-    fprintf(fp, "          %ld\n", offset);
-  }
-  fprintf(fp, "        </DataArray>\n");
-
-  /* Types */
-  fprintf(fp, "        <DataArray type=\"UInt8\" Name=\"types\" format=\"ascii\">\n");
-  for (i = 0; i < num_elems; i++)
-  {
-    eid = elem_indices[i];
-    vtk_type = get_vtk_cell_type(elem[eid].type, &n_nodes);
-    fprintf(fp, "          %d\n", vtk_type);
-  }
-  fprintf(fp, "        </DataArray>\n");
-  fprintf(fp, "      </Cells>\n");
-
-  /* 3. Point Data Fields */
+  fprintf(fp, "      <!-- 1. Point Data Fields -->\n");
   fprintf(fp, "      <PointData>\n");
+
   if (anz->l > 0 && lcase != NULL && num_step_lcs > 0)
   {
     for (k = 0; k < num_step_lcs; k++)
@@ -254,126 +264,442 @@ static int write_single_vtu_file(const char *filename,
       /* Displacements Vector (3 components) */
       if (compare(lcase[lc].name, "DISP", 4) == 4 || (lcase[lc].ncomps >= 3 && compare(lcase[lc].compName[0], "D1", 2) == 2))
       {
-        fprintf(fp, "        <DataArray type=\"Float32\" Name=\"Displacements\" NumberOfComponents=\"3\" format=\"ascii\">\n");
-        for (i = 0; i < num_pts; i++)
+        fprintf(fp, "        <DataArray type=\"Float32\" Name=\"Displacements\" NumberOfComponents=\"3\" format=\"%s\">",
+                is_binary ? "binary" : "ascii");
+        if (is_binary)
         {
-          nid = pts_nodenr[i];
-          fprintf(fp, "          %.6e %.6e %.6e\n",
-                  lcase[lc].dat[0][nid], lcase[lc].dat[1][nid], lcase[lc].dat[2][nid]);
+          f32_buf = (float *)malloc(num_pts * 3 * sizeof(float));
+          for (i = 0; i < num_pts; i++)
+          {
+            nid = pts_nodenr[i];
+            f32_buf[i * 3 + 0] = (float)lcase[lc].dat[0][nid];
+            f32_buf[i * 3 + 1] = (float)lcase[lc].dat[1][nid];
+            f32_buf[i * 3 + 2] = (float)lcase[lc].dat[2][nid];
+          }
+          write_base64_data_array(fp, f32_buf, num_pts * 3 * sizeof(float));
+          free(f32_buf);
         }
-        fprintf(fp, "        </DataArray>\n");
+        else
+        {
+          for (i = 0; i < num_pts; i++)
+          {
+            nid = pts_nodenr[i];
+            fprintf(fp, "\n          %.6e %.6e %.6e",
+                    lcase[lc].dat[0][nid], lcase[lc].dat[1][nid], lcase[lc].dat[2][nid]);
+          }
+          fprintf(fp, "\n        ");
+        }
+        fprintf(fp, "</DataArray>\n");
       }
       /* Stress Tensor & Precomputed Invariants */
       else if (compare(lcase[lc].name, "STRESS", 6) == 6 || lcase[lc].ncomps >= 6)
       {
         /* 6-component Stress Tensor */
-        fprintf(fp, "        <DataArray type=\"Float32\" Name=\"Stress\" NumberOfComponents=\"6\" format=\"ascii\">\n");
-        for (i = 0; i < num_pts; i++)
+        fprintf(fp, "        <DataArray type=\"Float32\" Name=\"Stress\" NumberOfComponents=\"6\" format=\"%s\">",
+                is_binary ? "binary" : "ascii");
+        if (is_binary)
         {
-          nid = pts_nodenr[i];
-          fprintf(fp, "          %.6e %.6e %.6e %.6e %.6e %.6e\n",
-                  lcase[lc].dat[0][nid], lcase[lc].dat[1][nid], lcase[lc].dat[2][nid],
-                  lcase[lc].dat[3][nid], lcase[lc].dat[4][nid], lcase[lc].dat[5][nid]);
+          f32_buf = (float *)malloc(num_pts * 6 * sizeof(float));
+          for (i = 0; i < num_pts; i++)
+          {
+            nid = pts_nodenr[i];
+            f32_buf[i * 6 + 0] = (float)lcase[lc].dat[0][nid];
+            f32_buf[i * 6 + 1] = (float)lcase[lc].dat[1][nid];
+            f32_buf[i * 6 + 2] = (float)lcase[lc].dat[2][nid];
+            f32_buf[i * 6 + 3] = (float)lcase[lc].dat[3][nid];
+            f32_buf[i * 6 + 4] = (float)lcase[lc].dat[4][nid];
+            f32_buf[i * 6 + 5] = (float)lcase[lc].dat[5][nid];
+          }
+          write_base64_data_array(fp, f32_buf, num_pts * 6 * sizeof(float));
+          free(f32_buf);
         }
-        fprintf(fp, "        </DataArray>\n");
+        else
+        {
+          for (i = 0; i < num_pts; i++)
+          {
+            nid = pts_nodenr[i];
+            fprintf(fp, "\n          %.6e %.6e %.6e %.6e %.6e %.6e",
+                    lcase[lc].dat[0][nid], lcase[lc].dat[1][nid], lcase[lc].dat[2][nid],
+                    lcase[lc].dat[3][nid], lcase[lc].dat[4][nid], lcase[lc].dat[5][nid]);
+          }
+          fprintf(fp, "\n        ");
+        }
+        fprintf(fp, "</DataArray>\n");
 
         /* Precomputed von Mises Scalar */
-        fprintf(fp, "        <DataArray type=\"Float32\" Name=\"vonMises\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-        for (i = 0; i < num_pts; i++)
+        fprintf(fp, "        <DataArray type=\"Float32\" Name=\"vonMises\" NumberOfComponents=\"1\" format=\"%s\">",
+                is_binary ? "binary" : "ascii");
+        if (is_binary)
         {
-          nid = pts_nodenr[i];
-          sxx = lcase[lc].dat[0][nid]; syy = lcase[lc].dat[1][nid]; szz = lcase[lc].dat[2][nid];
-          sxy = lcase[lc].dat[3][nid]; syz = lcase[lc].dat[4][nid]; szx = lcase[lc].dat[5][nid];
-          calc_principal_and_mises(sxx, syy, szz, sxy, syz, szx, &p1, &p2, &p3, &vm);
-          fprintf(fp, "          %.6e\n", vm);
+          f32_buf = (float *)malloc(num_pts * sizeof(float));
+          for (i = 0; i < num_pts; i++)
+          {
+            nid = pts_nodenr[i];
+            sxx = lcase[lc].dat[0][nid]; syy = lcase[lc].dat[1][nid]; szz = lcase[lc].dat[2][nid];
+            sxy = lcase[lc].dat[3][nid]; syz = lcase[lc].dat[4][nid]; szx = lcase[lc].dat[5][nid];
+            calc_principal_and_mises(sxx, syy, szz, sxy, syz, szx, &p1, &p2, &p3, &vm);
+            f32_buf[i] = (float)vm;
+          }
+          write_base64_data_array(fp, f32_buf, num_pts * sizeof(float));
+          free(f32_buf);
         }
-        fprintf(fp, "        </DataArray>\n");
+        else
+        {
+          for (i = 0; i < num_pts; i++)
+          {
+            nid = pts_nodenr[i];
+            sxx = lcase[lc].dat[0][nid]; syy = lcase[lc].dat[1][nid]; szz = lcase[lc].dat[2][nid];
+            sxy = lcase[lc].dat[3][nid]; syz = lcase[lc].dat[4][nid]; szx = lcase[lc].dat[5][nid];
+            calc_principal_and_mises(sxx, syy, szz, sxy, syz, szx, &p1, &p2, &p3, &vm);
+            fprintf(fp, "\n          %.6e", vm);
+          }
+          fprintf(fp, "\n        ");
+        }
+        fprintf(fp, "</DataArray>\n");
 
         /* Principal Stresses */
-        fprintf(fp, "        <DataArray type=\"Float32\" Name=\"PrincipalStress_1\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-        for (i = 0; i < num_pts; i++)
+        fprintf(fp, "        <DataArray type=\"Float32\" Name=\"PrincipalStress_1\" NumberOfComponents=\"1\" format=\"%s\">",
+                is_binary ? "binary" : "ascii");
+        if (is_binary)
         {
-          nid = pts_nodenr[i];
-          sxx = lcase[lc].dat[0][nid]; syy = lcase[lc].dat[1][nid]; szz = lcase[lc].dat[2][nid];
-          sxy = lcase[lc].dat[3][nid]; syz = lcase[lc].dat[4][nid]; szx = lcase[lc].dat[5][nid];
-          calc_principal_and_mises(sxx, syy, szz, sxy, syz, szx, &p1, &p2, &p3, &vm);
-          fprintf(fp, "          %.6e\n", p1);
+          f32_buf = (float *)malloc(num_pts * sizeof(float));
+          for (i = 0; i < num_pts; i++)
+          {
+            nid = pts_nodenr[i];
+            sxx = lcase[lc].dat[0][nid]; syy = lcase[lc].dat[1][nid]; szz = lcase[lc].dat[2][nid];
+            sxy = lcase[lc].dat[3][nid]; syz = lcase[lc].dat[4][nid]; szx = lcase[lc].dat[5][nid];
+            calc_principal_and_mises(sxx, syy, szz, sxy, syz, szx, &p1, &p2, &p3, &vm);
+            f32_buf[i] = (float)p1;
+          }
+          write_base64_data_array(fp, f32_buf, num_pts * sizeof(float));
+          free(f32_buf);
         }
-        fprintf(fp, "        </DataArray>\n");
+        else
+        {
+          for (i = 0; i < num_pts; i++)
+          {
+            nid = pts_nodenr[i];
+            sxx = lcase[lc].dat[0][nid]; syy = lcase[lc].dat[1][nid]; szz = lcase[lc].dat[2][nid];
+            sxy = lcase[lc].dat[3][nid]; syz = lcase[lc].dat[4][nid]; szx = lcase[lc].dat[5][nid];
+            calc_principal_and_mises(sxx, syy, szz, sxy, syz, szx, &p1, &p2, &p3, &vm);
+            fprintf(fp, "\n          %.6e", p1);
+          }
+          fprintf(fp, "\n        ");
+        }
+        fprintf(fp, "</DataArray>\n");
 
-        fprintf(fp, "        <DataArray type=\"Float32\" Name=\"PrincipalStress_2\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-        for (i = 0; i < num_pts; i++)
+        fprintf(fp, "        <DataArray type=\"Float32\" Name=\"PrincipalStress_2\" NumberOfComponents=\"1\" format=\"%s\">",
+                is_binary ? "binary" : "ascii");
+        if (is_binary)
         {
-          nid = pts_nodenr[i];
-          sxx = lcase[lc].dat[0][nid]; syy = lcase[lc].dat[1][nid]; szz = lcase[lc].dat[2][nid];
-          sxy = lcase[lc].dat[3][nid]; syz = lcase[lc].dat[4][nid]; szx = lcase[lc].dat[5][nid];
-          calc_principal_and_mises(sxx, syy, szz, sxy, syz, szx, &p1, &p2, &p3, &vm);
-          fprintf(fp, "          %.6e\n", p2);
+          f32_buf = (float *)malloc(num_pts * sizeof(float));
+          for (i = 0; i < num_pts; i++)
+          {
+            nid = pts_nodenr[i];
+            sxx = lcase[lc].dat[0][nid]; syy = lcase[lc].dat[1][nid]; szz = lcase[lc].dat[2][nid];
+            sxy = lcase[lc].dat[3][nid]; syz = lcase[lc].dat[4][nid]; szx = lcase[lc].dat[5][nid];
+            calc_principal_and_mises(sxx, syy, szz, sxy, syz, szx, &p1, &p2, &p3, &vm);
+            f32_buf[i] = (float)p2;
+          }
+          write_base64_data_array(fp, f32_buf, num_pts * sizeof(float));
+          free(f32_buf);
         }
-        fprintf(fp, "        </DataArray>\n");
+        else
+        {
+          for (i = 0; i < num_pts; i++)
+          {
+            nid = pts_nodenr[i];
+            sxx = lcase[lc].dat[0][nid]; syy = lcase[lc].dat[1][nid]; szz = lcase[lc].dat[2][nid];
+            sxy = lcase[lc].dat[3][nid]; syz = lcase[lc].dat[4][nid]; szx = lcase[lc].dat[5][nid];
+            calc_principal_and_mises(sxx, syy, szz, sxy, syz, szx, &p1, &p2, &p3, &vm);
+            fprintf(fp, "\n          %.6e", p2);
+          }
+          fprintf(fp, "\n        ");
+        }
+        fprintf(fp, "</DataArray>\n");
 
-        fprintf(fp, "        <DataArray type=\"Float32\" Name=\"PrincipalStress_3\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-        for (i = 0; i < num_pts; i++)
+        fprintf(fp, "        <DataArray type=\"Float32\" Name=\"PrincipalStress_3\" NumberOfComponents=\"1\" format=\"%s\">",
+                is_binary ? "binary" : "ascii");
+        if (is_binary)
         {
-          nid = pts_nodenr[i];
-          sxx = lcase[lc].dat[0][nid]; syy = lcase[lc].dat[1][nid]; szz = lcase[lc].dat[2][nid];
-          sxy = lcase[lc].dat[3][nid]; syz = lcase[lc].dat[4][nid]; szx = lcase[lc].dat[5][nid];
-          calc_principal_and_mises(sxx, syy, szz, sxy, syz, szx, &p1, &p2, &p3, &vm);
-          fprintf(fp, "          %.6e\n", p3);
+          f32_buf = (float *)malloc(num_pts * sizeof(float));
+          for (i = 0; i < num_pts; i++)
+          {
+            nid = pts_nodenr[i];
+            sxx = lcase[lc].dat[0][nid]; syy = lcase[lc].dat[1][nid]; szz = lcase[lc].dat[2][nid];
+            sxy = lcase[lc].dat[3][nid]; syz = lcase[lc].dat[4][nid]; szx = lcase[lc].dat[5][nid];
+            calc_principal_and_mises(sxx, syy, szz, sxy, syz, szx, &p1, &p2, &p3, &vm);
+            f32_buf[i] = (float)p3;
+          }
+          write_base64_data_array(fp, f32_buf, num_pts * sizeof(float));
+          free(f32_buf);
         }
-        fprintf(fp, "        </DataArray>\n");
+        else
+        {
+          for (i = 0; i < num_pts; i++)
+          {
+            nid = pts_nodenr[i];
+            sxx = lcase[lc].dat[0][nid]; syy = lcase[lc].dat[1][nid]; szz = lcase[lc].dat[2][nid];
+            sxy = lcase[lc].dat[3][nid]; syz = lcase[lc].dat[4][nid]; szx = lcase[lc].dat[5][nid];
+            calc_principal_and_mises(sxx, syy, szz, sxy, syz, szx, &p1, &p2, &p3, &vm);
+            fprintf(fp, "\n          %.6e", p3);
+          }
+          fprintf(fp, "\n        ");
+        }
+        fprintf(fp, "</DataArray>\n");
       }
       /* Scalar Datasets (Temperature, PEEQ, Pressure, etc.) */
       else if (lcase[lc].ncomps == 1)
       {
-        fprintf(fp, "        <DataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"1\" format=\"ascii\">\n", lcase[lc].name);
-        for (i = 0; i < num_pts; i++)
+        fprintf(fp, "        <DataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"1\" format=\"%s\">",
+                lcase[lc].name, is_binary ? "binary" : "ascii");
+        if (is_binary)
         {
-          nid = pts_nodenr[i];
-          fprintf(fp, "          %.6e\n", lcase[lc].dat[0][nid]);
+          f32_buf = (float *)malloc(num_pts * sizeof(float));
+          for (i = 0; i < num_pts; i++)
+          {
+            nid = pts_nodenr[i];
+            f32_buf[i] = (float)lcase[lc].dat[0][nid];
+          }
+          write_base64_data_array(fp, f32_buf, num_pts * sizeof(float));
+          free(f32_buf);
         }
-        fprintf(fp, "        </DataArray>\n");
+        else
+        {
+          for (i = 0; i < num_pts; i++)
+          {
+            nid = pts_nodenr[i];
+            fprintf(fp, "\n          %.6e", lcase[lc].dat[0][nid]);
+          }
+          fprintf(fp, "\n        ");
+        }
+        fprintf(fp, "</DataArray>\n");
       }
     }
 
     /* Include Frequency_Hz as accessible PointData field for modal analysis */
     if (analysis_type >= 2)
     {
-      fprintf(fp, "        <DataArray type=\"Float32\" Name=\"Frequency_Hz\" NumberOfComponents=\"1\" format=\"ascii\">\n");
-      for (i = 0; i < num_pts; i++)
+      fprintf(fp, "        <DataArray type=\"Float32\" Name=\"Frequency_Hz\" NumberOfComponents=\"1\" format=\"%s\">",
+              is_binary ? "binary" : "ascii");
+      if (is_binary)
       {
-        fprintf(fp, "          %.6e\n", step_val);
+        f32_buf = (float *)malloc(num_pts * sizeof(float));
+        for (i = 0; i < num_pts; i++) f32_buf[i] = (float)step_val;
+        write_base64_data_array(fp, f32_buf, num_pts * sizeof(float));
+        free(f32_buf);
       }
-      fprintf(fp, "        </DataArray>\n");
+      else
+      {
+        for (i = 0; i < num_pts; i++) fprintf(fp, "\n          %.6e", step_val);
+        fprintf(fp, "\n        ");
+      }
+      fprintf(fp, "</DataArray>\n");
     }
   }
   fprintf(fp, "      </PointData>\n");
 
   /* 4. Cell Data (Element IDs & Materials) */
   fprintf(fp, "      <CellData>\n");
-  fprintf(fp, "        <DataArray type=\"Int32\" Name=\"Element_ID\" format=\"ascii\">\n");
-  for (i = 0; i < num_elems; i++)
+  fprintf(fp, "        <DataArray type=\"Int32\" Name=\"Element_ID\" format=\"%s\">",
+          is_binary ? "binary" : "ascii");
+  if (is_binary)
   {
-    eid = elem_indices[i];
-    fprintf(fp, "          %d\n", elem[eid].nr);
+    i32_buf = (int32_t *)malloc(num_elems * sizeof(int32_t));
+    for (i = 0; i < num_elems; i++)
+    {
+      eid = elem_indices[i];
+      i32_buf[i] = elem[eid].nr;
+    }
+    write_base64_data_array(fp, i32_buf, num_elems * sizeof(int32_t));
+    free(i32_buf);
   }
-  fprintf(fp, "        </DataArray>\n");
+  else
+  {
+    for (i = 0; i < num_elems; i++)
+    {
+      eid = elem_indices[i];
+      fprintf(fp, "\n          %d", elem[eid].nr);
+    }
+    fprintf(fp, "\n        ");
+  }
+  fprintf(fp, "</DataArray>\n");
 
-  fprintf(fp, "        <DataArray type=\"Int32\" Name=\"Material_ID\" format=\"ascii\">\n");
-  for (i = 0; i < num_elems; i++)
+  fprintf(fp, "        <DataArray type=\"Int32\" Name=\"Material_ID\" format=\"%s\">",
+          is_binary ? "binary" : "ascii");
+  if (is_binary)
   {
-    eid = elem_indices[i];
-    fprintf(fp, "          %d\n", elem[eid].mat);
+    i32_buf = (int32_t *)malloc(num_elems * sizeof(int32_t));
+    for (i = 0; i < num_elems; i++)
+    {
+      eid = elem_indices[i];
+      i32_buf[i] = elem[eid].mat;
+    }
+    write_base64_data_array(fp, i32_buf, num_elems * sizeof(int32_t));
+    free(i32_buf);
   }
-  fprintf(fp, "        </DataArray>\n");
+  else
+  {
+    for (i = 0; i < num_elems; i++)
+    {
+      eid = elem_indices[i];
+      fprintf(fp, "\n          %d", elem[eid].mat);
+    }
+    fprintf(fp, "\n        ");
+  }
+  fprintf(fp, "</DataArray>\n");
   fprintf(fp, "      </CellData>\n");
 
-  fprintf(fp, "    </Piece>\n");
-  fprintf(fp, "  </UnstructuredGrid>\n");
-  fprintf(fp, "</VTKFile>\n");
+  /* 3. Point Coordinates */
+  fprintf(fp, "      <Points>\n");
+  fprintf(fp, "        <DataArray type=\"Float64\" Name=\"Points\" NumberOfComponents=\"3\" format=\"%s\">",
+          is_binary ? "binary" : "ascii");
+  if (is_binary)
+  {
+    f64_buf = (double *)malloc(num_pts * 3 * sizeof(double));
+    for (i = 0; i < num_pts; i++)
+    {
+      nid = pts_nodenr[i];
+      f64_buf[i * 3 + 0] = node[nid].nx;
+      f64_buf[i * 3 + 1] = node[nid].ny;
+      f64_buf[i * 3 + 2] = node[nid].nz;
+    }
+    write_base64_data_array(fp, f64_buf, num_pts * 3 * sizeof(double));
+    free(f64_buf);
+  }
+  else
+  {
+    for (i = 0; i < num_pts; i++)
+    {
+      nid = pts_nodenr[i];
+      fprintf(fp, "\n          %.9e %.9e %.9e", node[nid].nx, node[nid].ny, node[nid].nz);
+    }
+    fprintf(fp, "\n        ");
+  }
+  fprintf(fp, "</DataArray>\n");
+  fprintf(fp, "      </Points>\n");
+
+  /* 4. Cells (Topology, Offsets, Types) */
+  fprintf(fp, "      <Cells>\n");
+
+  /* Count total connectivity points */
+  total_conn = 0;
+  for (i = 0; i < num_elems; i++)
+  {
+    eid = elem_indices[i];
+    get_vtk_cell_type(elem[eid].type, &n_nodes);
+    total_conn += n_nodes;
+  }
+
+  /* Connectivity */
+  fprintf(fp, "        <DataArray type=\"Int32\" Name=\"connectivity\" format=\"%s\">",
+          is_binary ? "binary" : "ascii");
+  if (is_binary)
+  {
+    int c_idx = 0;
+    i32_buf = (int32_t *)malloc(total_conn * sizeof(int32_t));
+    for (i = 0; i < num_elems; i++)
+    {
+      eid = elem_indices[i];
+      vtk_type = get_vtk_cell_type(elem[eid].type, &n_nodes);
+      for (j = 0; j < n_nodes; j++)
+      {
+        int map_idx = j;
+        if (elem[eid].type == 4) map_idx = vtk_map_hex20[j];
+        else if (elem[eid].type == 5) map_idx = vtk_map_penta15[j];
+
+        nid = elem[eid].nod[map_idx];
+        i32_buf[c_idx++] = (nid >= 0 && nid <= anz->nmax) ? (int32_t)nodeMap[nid] : 0;
+      }
+    }
+    write_base64_data_array(fp, i32_buf, total_conn * sizeof(int32_t));
+    free(i32_buf);
+  }
+  else
+  {
+    for (i = 0; i < num_elems; i++)
+    {
+      eid = elem_indices[i];
+      vtk_type = get_vtk_cell_type(elem[eid].type, &n_nodes);
+      fprintf(fp, "\n         ");
+      for (j = 0; j < n_nodes; j++)
+      {
+        int map_idx = j;
+        if (elem[eid].type == 4) map_idx = vtk_map_hex20[j];
+        else if (elem[eid].type == 5) map_idx = vtk_map_penta15[j];
+
+        nid = elem[eid].nod[map_idx];
+        fprintf(fp, " %d", (nid >= 0 && nid <= anz->nmax) ? nodeMap[nid] : 0);
+      }
+    }
+    fprintf(fp, "\n        ");
+  }
+  fprintf(fp, "</DataArray>\n");
+
+  /* Offsets */
+  fprintf(fp, "        <DataArray type=\"Int32\" Name=\"offsets\" format=\"%s\">",
+          is_binary ? "binary" : "ascii");
+  if (is_binary)
+  {
+    offset = 0;
+    i32_buf = (int32_t *)malloc(num_elems * sizeof(int32_t));
+    for (i = 0; i < num_elems; i++)
+    {
+      eid = elem_indices[i];
+      get_vtk_cell_type(elem[eid].type, &n_nodes);
+      offset += n_nodes;
+      i32_buf[i] = (int32_t)offset;
+    }
+    write_base64_data_array(fp, i32_buf, num_elems * sizeof(int32_t));
+    free(i32_buf);
+  }
+  else
+  {
+    offset = 0;
+    for (i = 0; i < num_elems; i++)
+    {
+      eid = elem_indices[i];
+      get_vtk_cell_type(elem[eid].type, &n_nodes);
+      offset += n_nodes;
+      fprintf(fp, "\n          %ld", offset);
+    }
+    fprintf(fp, "\n        ");
+  }
+  fprintf(fp, "</DataArray>\n");
+
+  /* Types */
+  fprintf(fp, "        <DataArray type=\"UInt8\" Name=\"types\" format=\"%s\">",
+          is_binary ? "binary" : "ascii");
+  if (is_binary)
+  {
+    u8_buf = (uint8_t *)malloc(num_elems * sizeof(uint8_t));
+    for (i = 0; i < num_elems; i++)
+    {
+      eid = elem_indices[i];
+      u8_buf[i] = (uint8_t)get_vtk_cell_type(elem[eid].type, &n_nodes);
+    }
+    write_base64_data_array(fp, u8_buf, num_elems * sizeof(uint8_t));
+    free(u8_buf);
+  }
+  else
+  {
+    for (i = 0; i < num_elems; i++)
+    {
+      eid = elem_indices[i];
+      vtk_type = get_vtk_cell_type(elem[eid].type, &n_nodes);
+      fprintf(fp, "\n          %d", vtk_type);
+    }
+    fprintf(fp, "\n        ");
+  }
+  fprintf(fp, "</DataArray>\n");
+  fprintf(fp, "      </Cells>\n");
+
+    fprintf(fp, "    </Piece>\n");
+    fprintf(fp, "  </UnstructuredGrid>\n");
+    fprintf(fp, "</VTKFile>\n");
 
   fclose(fp);
-  printf("  -> Written: %s (%d nodes, %d cells)\n", filename, num_pts, num_elems);
+  printf("  -> Written: %s (%d nodes, %d cells, %s)\n", filename, num_pts, num_elems, is_binary ? "binary" : "ascii");
   return 1;
 }
 
@@ -387,8 +713,8 @@ typedef struct {
   int    lcs[64];
 } PhysStep;
 
-/* Main entry point for send <set> vtu/vtk [all] */
-int write2vtu(char *setname, char *format, int strings, char **string, Summen *anz,
+/* Main entry point for send <set> vtu [all] [ascii] */
+int write2vtu(char *setname, int strings, char **string, Summen *anz,
               Nodes *node, Faces *face, Elements *elem, Sets *set, Datasets *lcase)
 {
   int setNr, i, j, k, eid, nid, n_nodes, vtk_type;
@@ -397,7 +723,7 @@ int write2vtu(char *setname, char *format, int strings, char **string, Summen *a
   int *pts_nodenr = NULL;
   int *elem_indices = NULL;
   int export_all_steps = 0;
-  char ext[8] = "vtu";
+  int is_binary = 1; /* Default to high-performance Base64 binary */
   char vtu_filename[MAX_LINE_LENGTH];
   char pvd_filename[MAX_LINE_LENGTH];
   FILE *pvd_fp = NULL;
@@ -405,9 +731,6 @@ int write2vtu(char *setname, char *format, int strings, char **string, Summen *a
   PhysStep *psteps = NULL;
   int num_psteps = 0;
   int active_pstep = 0;
-
-  if (format != NULL && compare(format, "vtk", 3) == 3) strcpy(ext, "vtk");
-  else if (format != NULL && compare(format, "vtu", 3) == 3) strcpy(ext, "vtu");
 
   if (anz->n == 0 || anz->e == 0)
   {
@@ -422,17 +745,19 @@ int write2vtu(char *setname, char *format, int strings, char **string, Summen *a
     return 0;
   }
 
-  /* Check if \"all\" steps requested */
-  if (strings > 0 && string != NULL && string[0] != NULL)
+  /* Parse options (all, ascii/txt) */
+  for (i = 0; i < strings; i++)
   {
-    if (compare(string[0], "all", 3) == 3)
+    if (string[i] != NULL)
     {
-      export_all_steps = 1;
+      if (compare(string[i], "all", 3) == 3) export_all_steps = 1;
+      else if (compare(string[i], "asc", 3) == 3 || compare(string[i], "txt", 3) == 3) is_binary = 0;
     }
   }
 
-  printf("\n=== Exporting to VTK XML Unstructured Grid (.%s) ===\n", ext);
-  printf("Set: %s (mode: %s)\n", setname, export_all_steps ? "all steps (.pvd)" : "active step (.vtu)");
+  printf("\n=== Exporting to VTK XML Unstructured Grid (.vtu) ===\n");
+  printf("Set: %s (mode: %s, encoding: %s)\n",
+         setname, export_all_steps ? "all steps (.pvd)" : "active step (.vtu)", is_binary ? "binary (Base64)" : "ascii");
 
   /* 1. Identify Elements in Set */
   num_elems = set[setNr].anz_e;
@@ -547,9 +872,10 @@ int write2vtu(char *setname, char *format, int strings, char **string, Summen *a
     /* Write individual physical step files */
     for (i = 0; i < num_psteps; i++)
     {
-      sprintf(vtu_filename, "%s_step_%03d.%s", setname, i + 1, ext);
+      sprintf(vtu_filename, "%s_step_%03d.vtu", setname, i + 1);
       write_single_vtu_file(vtu_filename, psteps[i].num_lcs, psteps[i].lcs,
                             psteps[i].value, psteps[i].step_number, psteps[i].analysis_type,
+                            is_binary,
                             anz, node, elem, set, setNr, lcase,
                             num_pts, pts_nodenr, nodeMap, num_elems, elem_indices);
 
@@ -586,11 +912,12 @@ int write2vtu(char *setname, char *format, int strings, char **string, Summen *a
   else
   {
     /* Single active step / mesh */
-    sprintf(vtu_filename, "%s.%s", setname, ext);
+    sprintf(vtu_filename, "%s.vtu", setname);
     if (num_psteps > 0)
     {
       write_single_vtu_file(vtu_filename, psteps[active_pstep].num_lcs, psteps[active_pstep].lcs,
                             psteps[active_pstep].value, psteps[active_pstep].step_number, psteps[active_pstep].analysis_type,
+                            is_binary,
                             anz, node, elem, set, setNr, lcase,
                             num_pts, pts_nodenr, nodeMap, num_elems, elem_indices);
     }
@@ -598,6 +925,7 @@ int write2vtu(char *setname, char *format, int strings, char **string, Summen *a
     {
       write_single_vtu_file(vtu_filename, 0, NULL,
                             0.0, 0, 0,
+                            is_binary,
                             anz, node, elem, set, setNr, lcase,
                             num_pts, pts_nodenr, nodeMap, num_elems, elem_indices);
     }
