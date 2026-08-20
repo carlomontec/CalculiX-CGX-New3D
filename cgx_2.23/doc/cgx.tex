@@ -2070,6 +2070,7 @@ This keyword is used to scale the graphic presentation of values but no values o
                ['force' <f1> <f2> <f3>]|
                ['quadlin']|
                ['sur' [+|-] ]
+  'send' <set> 'vtu' ['all'|'ds'<nr>] ['ascii']
   'send' <set> 'dolfyn' [<type> <set>] 
   'send' <set> ['duns'|'isaac'] [[<type>|'periodic'] <set>] 
   'send' <set> ['foam'] [<type> <set>] | ->
@@ -2084,6 +2085,8 @@ This keyword is used to scale the graphic presentation of values but no values o
     ['gap' <vx> <vy> <vz> <tol>] 
 \end{verbatim}
 This keyword is used to send data to the file-system. In certain cases the written file-name contains given parameters to make them unique which is convenient when the user writes several files of the same type. But on the other hand this makes it sometimes hard to know in advance how the file would be named. Therefore the send command writes the file-name to the stack from which the user can derive the name if the ''\htmlref{stack}{stack}'' was activated.
+
+The VTK XML UnstructuredGrid format (vtu) is supported for exporting meshes and results directly to modern scientific visualizers like ParaView:\\\\send all vtu\\\\will export the mesh and active dataset in high-performance Base64 inline binary encoding into a .vtu file. If the ``ascii'' parameter is given:\\\\send all vtu ascii\\\\the file is written in ASCII format. When exporting transient or modal results across multiple time-steps:\\\\send all vtu all\\\\individual time-step .vtu files are generated along with a master ParaView Collection file (.pvd), enabling 1-click loading and time-history animation in ParaView. All CalculiX element types (TET4, TET10, HEX8, HEX20, WEDGE6, WEDGE15, PYR5, PYR13, TR3, TR6, QUAD4, QUAD8, BEAM2, BEAM3) are fully converted to their canonical VTK cell equivalents.
 
 The following formats are known (but not all options for all formats are fully supported so far); The geometry-format (fbd)\\\\send set fbd\\\\or\\\\send set fbd c\\\\will complete the set downwards before writing.
 
@@ -2574,7 +2577,8 @@ The sections ''\htmlref{How to write values to a file}{How to write values to a 
    'view' 'fill'|'line'|'point' [<value>]|'cl' 'off'|
           'edge' [<value>|'off']|'elem' ['off']|'surf'|'volu'|
           'front'|'back'|'vec' ['off']|'disp' ['off'|'keep']|
-          'bg' ['w'|'k']|'sh' ['off']|'ill' ['off']|'rul' ['off'|<string>]
+          'bg' ['w'|'k']|'sh' ['off']|'ill' ['off']|'rul' ['off'|<string>]|
+          'persp'|'ortho'|'dark'|'light'
 \end{verbatim}
 Command to control the graphic output. This command is intended for batch-mode. See also ''\htmlref{Viewing}{Viewing}'' for the menu controlled functions.
 \begin{itemize}
@@ -2591,6 +2595,8 @@ Command to control the graphic output. This command is intended for batch-mode. 
 \item ''sh'' Shaded results are shown. Switched off with ''off''. 
 \item ''ill'' Illuminale the backface of the elements. Switched off with ''off''. 
 \item ''rul'' triggers the display of a ruler bar. Switched off with ''off''. A string containing the unit can be given: ``view rul mm''. 
+\item ''persp'' and ''ortho'' switch between realistic 3D perspective projection and classic orthographic (parallel) projection.
+\item ''dark'' and ''light'' switch the viewport theme between modern high-contrast dark charcoal and classic clean white background.
 \end{itemize}  
 
 \subsection{\label{volu}volu}
