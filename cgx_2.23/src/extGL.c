@@ -1780,6 +1780,7 @@ void scala_tex(double ratio, double dx, double dy, int divisions, double bmin, d
 
   extern char flipColorFlag;
 
+  glPushAttrib(GL_ALL_ATTRIB_BITS);
   glDisable(GL_CULL_FACE);
   glDisable(GL_LIGHTING);
   glDisable(GL_TEXTURE_1D);
@@ -1848,6 +1849,7 @@ void scala_tex(double ratio, double dx, double dy, int divisions, double bmin, d
     glRasterPos2d( (dx+kb*0.2), dy-kh*0.1 );
     for ( j=0; j<10; j++) glutBitmapCharacter(glut_font, string[j]);
   }
+  glPopAttrib();
 }
 
 
