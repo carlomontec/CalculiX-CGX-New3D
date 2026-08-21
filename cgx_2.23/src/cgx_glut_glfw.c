@@ -1586,7 +1586,6 @@ void glutMainLoop(void)
         glViewport(vp_x, vp_y, vp_w, vp_h);
         glEnable(GL_SCISSOR_TEST);
         glScissor(vp_x, vp_y, vp_w, vp_h);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
         win->display_func();
 
