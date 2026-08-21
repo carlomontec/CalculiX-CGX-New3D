@@ -75,7 +75,8 @@ elif [ "${OS}" = "Linux" ]; then
     if [ "${ARCH}" = "x86_64" ]; then
         BINARY_NAME="cgx_glfw-linux-x86_64"
     else
-        echo -e "${YELLOW}Warning: Pre-built binary not available for Linux ${ARCH}. Falling back to build from source.${NC}"
+        echo -e "${RED}Error: Linux '${ARCH}' architecture is not supported yet (future work).${NC}"
+        exit 1
     fi
 else
     echo -e "${RED}Error: Unsupported operating system '${OS}'.${NC}"
@@ -257,7 +258,7 @@ do_build_install() {
     fi
 
     make -f Makefile.glfw clean 2>/dev/null || true
-    make -f Makefile.glfw -j"${NPROC}"
+    make -f Makefile.glfw OPT="-O3 -march=native" -j"${NPROC}"
 
     # Copy output binary to ~/.local/bin/cgx_glfw
     if [ -f "${SRC_ROOT}/bin/cgx_glfw" ]; then

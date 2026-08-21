@@ -11,16 +11,19 @@ UNAME_S := $(shell uname -s)
 CC = gcc
 CXX = g++
 
+OPT ?= -O2
 INCLUDES = -I./ -I../../libSNL/src
-CFLAGS = -O2 -std=gnu17 -Wall -Wno-narrowing -DUSE_GLFW $(INCLUDES)
-CXXFLAGS = -O2 -std=c++11 -Wall -Wno-narrowing -Wno-register -DUSE_GLFW $(INCLUDES)
+CFLAGS = $(OPT) -std=gnu17 -Wall -Wno-narrowing -DUSE_GLFW $(INCLUDES)
+CXXFLAGS = $(OPT) -std=c++11 -Wall -Wno-narrowing -Wno-register -DUSE_GLFW $(INCLUDES)
 
 ifeq ($(UNAME_S),Darwin)
   # macOS native configuration (Zero X11 / Zero XQuartz / Zero GLUT)
-  INCLUDES += -I/opt/homebrew/include -I/opt/homebrew/Cellar/glfw/3.5.1/include
-  CFLAGS += -I/opt/homebrew/include -I/opt/homebrew/Cellar/glfw/3.5.1/include
-  CXXFLAGS += -I/opt/homebrew/include -I/opt/homebrew/Cellar/glfw/3.5.1/include
-  LFLAGS = -L/opt/homebrew/lib -L/opt/homebrew/Cellar/glfw/3.5.1/lib -lglfw \
+  GLFW_CFLAGS := $(shell pkg-config --cflags glfw3 2>/dev/null || echo "-I/opt/homebrew/include -I/usr/local/include")
+  GLFW_LIBS := $(shell pkg-config --libs glfw3 2>/dev/null || echo "-L/opt/homebrew/lib -L/usr/local/lib -lglfw")
+  INCLUDES += $(GLFW_CFLAGS)
+  CFLAGS += $(GLFW_CFLAGS)
+  CXXFLAGS += $(GLFW_CFLAGS)
+  LFLAGS = $(GLFW_LIBS) \
            -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo \
            -lm -lpthread
 else ifneq ($(findstring MINGW,$(UNAME_S))$(findstring MSYS,$(UNAME_S))$(findstring CYGWIN,$(UNAME_S))$(findstring Windows,$(OS)),)
@@ -59,7 +62,7 @@ CPP_SRC = \
  generateTet.cpp \
  $(wildcard ../../libSNL/src/*.cpp)
 
-OUT = ../../bin/cgx_glfw
+OUT ?= ../../bin/cgx_glfw
 
 SRCS = $(SLIB) $(ULIB) $(GLFW_LIB)
 OBJS = $(SRCS:.c=.o)
