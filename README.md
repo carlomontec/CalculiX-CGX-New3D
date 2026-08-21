@@ -45,8 +45,8 @@ The objective is to explore agent-assisted refactoring by modernizing CGX's wind
 
 2. **Clone & Compile**:
    ```bash
-   git clone https://github.com/carlomontec/CalculiX-CGX-New3D.git
-   cd CalculiX-CGX-New3D/cgx_2.23/src
+   git clone https://github.com/carlomontec/CalculiX-GraphiX-GLFW.git
+   cd CalculiX-GraphiX-GLFW/cgx_2.23/src
    make -f Makefile.glfw -j$(sysctl -n hw.ncpu)
    ```
 
@@ -75,8 +75,8 @@ The objective is to explore agent-assisted refactoring by modernizing CGX's wind
 
 2. **Clone & Compile**:
    ```bash
-   git clone https://github.com/carlomontec/CalculiX-CGX-New3D.git
-   cd CalculiX-CGX-New3D/cgx_2.23/src
+   git clone https://github.com/carlomontec/CalculiX-GraphiX-GLFW.git
+   cd CalculiX-GraphiX-GLFW/cgx_2.23/src
    make -f Makefile.glfw -j$(nproc)
    ```
 
@@ -96,8 +96,8 @@ The objective is to explore agent-assisted refactoring by modernizing CGX's wind
 
 2. **Clone & Compile**:
    ```bash
-   git clone https://github.com/carlomontec/CalculiX-CGX-New3D.git
-   cd CalculiX-CGX-New3D/cgx_2.23/src
+   git clone https://github.com/carlomontec/CalculiX-GraphiX-GLFW.git
+   cd CalculiX-GraphiX-GLFW/cgx_2.23/src
    make -f Makefile.glfw -j$(nproc)
    ```
 
