@@ -43,12 +43,13 @@ Install and run **CalculiX GraphiX (GLFW Edition)** on **macOS (Apple Silicon / 
 ### Installation Options:
 When prompted, you can choose:
 * **Option 1: Fast Install (Default)**: Automatically checks runtime libraries and downloads the matching pre-compiled release binary (**macOS arm64** or **Linux x86_64**). Ready in 2 seconds!
-* **Option 2: Build from Source**: Automatically installs development toolchains and compiles locally with `-O3 -march=native` for maximum hardware performance on your CPU.
+* **Option 2: Build from Source**: Automatically installs development toolchains and compiles the latest stable release locally with `-O3 -march=native` for maximum hardware performance on your CPU.
 
 > **Unattended / CI Usage**:
 > ```bash
 > ./install.sh --binary   # Fast pre-built install
-> ./install.sh --build    # Local CPU-optimized compilation
+> ./install.sh --build    # Local CPU-optimized compilation (latest release tag)
+> ./install.sh --head     # Bleeding-edge compilation from 'main' branch
 > ```
 
 ---

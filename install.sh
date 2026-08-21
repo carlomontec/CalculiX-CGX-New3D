@@ -239,11 +239,26 @@ do_build_install() {
         mkdir -p "${SOURCE_DIR}"
         SRC_ROOT="${SOURCE_DIR}/CalculiX-GraphiX-GLFW"
         
-        echo -e "\n${BOLD}--> Cloning CalculiX-GraphiX-GLFW into ${SRC_ROOT}...${NC}"
+        echo -e "\n${BOLD}--> Fetching CalculiX-GraphiX-GLFW into ${SRC_ROOT}...${NC}"
         if [ -d "${SRC_ROOT}/.git" ]; then
-            git -C "${SRC_ROOT}" pull --rebase || true
+            git -C "${SRC_ROOT}" fetch --tags origin || true
         else
             git clone "${GITHUB_REPO_URL}" "${SRC_ROOT}"
+        fi
+
+        if [ -n "$USE_HEAD" ]; then
+            echo -e "--> Building bleeding-edge from '${BOLD}main${NC}' branch (--head)..."
+            git -C "${SRC_ROOT}" checkout main --quiet 2>/dev/null || git -C "${SRC_ROOT}" checkout master --quiet 2>/dev/null || true
+            git -C "${SRC_ROOT}" pull --rebase origin main 2>/dev/null || true
+        else
+            LATEST_TAG=$(git -C "${SRC_ROOT}" tag --sort=-v:refname 2>/dev/null | head -n 1)
+            if [ -n "$LATEST_TAG" ]; then
+                echo -e "--> Checking out latest release tag: ${BOLD}${LATEST_TAG}${NC}..."
+                git -C "${SRC_ROOT}" checkout "${LATEST_TAG}" --quiet
+            else
+                echo -e "--> No release tags found; using '${BOLD}main${NC}' branch..."
+                git -C "${SRC_ROOT}" pull --rebase origin main 2>/dev/null || true
+            fi
         fi
     fi
 
@@ -338,6 +353,7 @@ prompt_global_install() {
 # CLI Argument parsing
 CHOICE=""
 NON_INTERACTIVE=""
+USE_HEAD=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --binary|--fast|-b)
@@ -350,11 +366,18 @@ while [[ $# -gt 0 ]]; do
             NON_INTERACTIVE="1"
             shift
             ;;
+        --head)
+            CHOICE="2"
+            NON_INTERACTIVE="1"
+            USE_HEAD="1"
+            shift
+            ;;
         --help|-h)
             echo "Usage: install.sh [OPTION]"
             echo "Options:"
             echo "  --binary, -b    Fast install: Download pre-built binary & install runtime libs"
-            echo "  --build,  -s    Power install: Compile locally with native CPU optimizations"
+            echo "  --build,  -s    Power install: Compile locally with native CPU optimizations (latest release tag)"
+            echo "  --head          Build from the bleeding-edge 'main' branch instead of latest release tag"
             echo "  --help,   -h    Show this help message"
             exit 0
             ;;
@@ -369,7 +392,7 @@ done
 if [ -z "$CHOICE" ]; then
     echo -e "\nChoose installation method:"
     echo -e "  ${BOLD}1) Fast Install${NC} (Download pre-built binary + install runtime libs) ${YELLOW}[Default]${NC}"
-    echo -e "  ${BOLD}2) Build from Source${NC} (Compile locally with -march=native for max performance)"
+    echo -e "  ${BOLD}2) Build from Source${NC} (Compile locally with -march=native from latest release tag)"
     echo ""
     prompt_read "Select [1/2] (Default: 1): " "1" CHOICE
 fi
