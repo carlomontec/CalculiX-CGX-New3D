@@ -178,13 +178,13 @@
 /*
 used fom material illumination
 */
-#define ILLUMINATE_RESULTS 0           /* 1: illumination of displayed results */
+#define ILLUMINATE_RESULTS 1           /* 1: illumination of displayed results (Default) */
 
-#define GAMB     0.5
-#define AMB      1.0
-#define DIFF     0.5
+#define GAMB     0.18
+#define AMB      0.22
+#define DIFF     0.80
 #define MAT_DIFF 0.6
-#define MAT_SPEC 0.0
+#define MAT_SPEC 0.15
 
 #define  CMAP_CELLS_LIGHT  34             /* number of grey-values in the colormap */
 #define  CMAP_DARKSHIFT     5             /* black-shift of the most bright color-cell */

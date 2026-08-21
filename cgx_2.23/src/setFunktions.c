@@ -25291,31 +25291,28 @@ void setMaterial_rgb(int col, float alpha)
   GLfloat mat_shininess; /* 0->128 Blankheit */
   GLfloat mat_specular[4]; /* ungerichtete reflektion*/
   GLfloat mat_diffuse[4];  /* gerichtete reflektion*/
-  mat_shininess= 120.;    /* blankheit, wirkt nicht wg lichtrichtung */
+  GLfloat mat_ambient[4];  /* allseitige reflektion */
+  mat_shininess= 64.;    /* smooth specular highlight */
 
   mat_specular[0]=MAT_SPEC;
   mat_specular[1]=MAT_SPEC;
   mat_specular[2]=MAT_SPEC;
-  /*
-  mat_specular[0]=entitycol[col].r;  //MAT_SPEC 
-  mat_specular[1]=entitycol[col].g;
-  mat_specular[2]=entitycol[col].b;
-  */
   mat_specular[3]=alpha;          
 
   mat_diffuse[0]=entitycol[col].r;
   mat_diffuse[1]=entitycol[col].g;
   mat_diffuse[2]=entitycol[col].b;
-  /*
-  mat_diffuse[0]=0;
-  mat_diffuse[1]=0;
-  mat_diffuse[2]=0;
-  */         
   mat_diffuse[3]=alpha;          
+
+  /* Ambient reflection tracks entity color to preserve vibrant tint in shadows */
+  mat_ambient[0]=entitycol[col].r * 0.40f;
+  mat_ambient[1]=entitycol[col].g * 0.40f;
+  mat_ambient[2]=entitycol[col].b * 0.40f;
+  mat_ambient[3]=alpha;
 
   /* Reflexionseigenschaften des Materials aufbringen */
   glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, mat_shininess);
   glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE,   mat_diffuse);
-  //glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE,   mat_diffuse);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT,   mat_ambient);
   glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,  mat_specular);
 }

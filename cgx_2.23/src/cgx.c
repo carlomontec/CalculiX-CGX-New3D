@@ -5969,6 +5969,10 @@ void moveModel()
     glLoadIdentity();
   }
   
+  /* Position directional key light in camera/eye space (overhead-right from viewer) */
+  static GLfloat light_pos[] = { 0.25f, 0.45f, 0.85f, 0.0f };
+  glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
+  
   v[0]= centerPnt[0] ;            /* nodes sind scaliert, sonst scalieren mit scalNodes() */
   v[1]= centerPnt[1] ;
   v[2]= centerPnt[2] ;
@@ -7256,20 +7260,21 @@ void initLight_rgb( void )
   /* lichtanteile rgba definieren  */
     static GLfloat ambient0[] = { AMB, AMB, AMB, 1.0 }; /* ungerichtet */
     static GLfloat diffuse0[] = { DIFF, DIFF, DIFF, 1.0 }; /* gerichtetes licht*/
+    static GLfloat specular0[] = { 0.3f, 0.3f, 0.3f, 1.0f };
 
-  /* Position der Lichtquellen xyzw, mit w=0.0 entfernung unendlich def.*/
-    static GLfloat position0[] = { 0., 0., -1., 0.0 };
+  /* Position der Lichtquellen xyzw, mit w=0.0 gerichtetes licht aus Betrachterrichtung */
+    static GLfloat position0[] = { 0.25f, 0.45f, 0.85f, 0.0f };
 
     /*    glMatrixMode(GL_PROJECTION); fuert hier zu bildfehlern (Z-Buffer) */
     /* Definieren und Positionieren der Lampen */
     glLightfv(GL_LIGHT0, GL_AMBIENT, ambient0);          /* allseitiges Licht */
     glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse0);          /* gerichtetes Licht, ungerichtete reflexion */
-    glLightfv(GL_LIGHT0, GL_SPECULAR, diffuse0);         /* gerichtetes Licht, gerichtete reflexion */
+    glLightfv(GL_LIGHT0, GL_SPECULAR, specular0);        /* gerichtetes Licht, gerichtete reflexion */
     glLightfv(GL_LIGHT0, GL_POSITION, position0);
 
     /* Beschreibung des Beleuchtungsmodells */
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient); /* globales licht ohne quelle */
-    glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, lmodel_oneside);
+    glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, lmodel_twoside);
     glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_FALSE); /* GL_FALSE: infinite distance */
 
     glEnable(GL_LIGHT0);
@@ -7886,6 +7891,7 @@ int main( int argc, char **argv )
   glutDisplayFunc ( DrawPickedItems );
   glEnable ( GL_DEPTH_TEST );
   glDepthFunc(GL_LEQUAL);
+  glEnable ( GL_NORMALIZE );
   glFrontFace ( GL_CCW );
   glShadeModel (GL_FLAT);
   /* Eventhandling Grafikfenster */
@@ -7896,7 +7902,7 @@ int main( int argc, char **argv )
   glutEntryFunc ( entryfunktion );
   glutPassiveMotionFunc ( Mouse );
   glDisable(GL_DITHER);
-  glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, lmodel_oneside);
+  glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, lmodel_twoside);
   glCullFace ( GL_BACK );
   initLight_rgb();
 
