@@ -1778,18 +1778,38 @@ void scala_tex(double ratio, double dx, double dy, int divisions, double bmin, d
   kh= 1.0/divisions*1.5*ratio;
   kb= 1.0/20.;
 
+  extern char flipColorFlag;
+
   for (i=0; i<divisions; i++)
   {
-    glColor3d( 1,1,1);
-    glEnable(GL_TEXTURE_1D);
-    glTexCoord1d    ( (GLdouble)i/(GLdouble)divisions*scale );
+    float r1, g1, b1, r2, g2, b2;
+    float v1 = (divisions > 0) ? (float)i / (float)divisions : 0.0f;
+    float v2 = (divisions > 0) ? (float)(i + 1) / (float)divisions : 1.0f;
+    if (flipColorFlag)
+    {
+      v1 = 1.0f - v1;
+      v2 = 1.0f - v2;
+    }
+    define_rgb(v1, &r1, &g1, &b1);
+    define_rgb(v2, &r2, &g2, &b2);
+
     glBegin ( GL_POLYGON );
+      glColor3f ( r1, g1, b1 );
+      glVertex2d ( dx-kb*0., dy+kh*0. );
+      glVertex2d ( dx-kb*1., dy+kh*0. );
+      glColor3f ( r2, g2, b2 );
+      glVertex2d ( dx-kb*1., dy+kh*1. );
+      glVertex2d ( dx-kb*0., dy+kh*1. );
+    glEnd();
+
+    glColor3dv ( col );
+    glLineWidth(1.0f);
+    glBegin ( GL_LINE_LOOP );
       glVertex2d ( dx-kb*0., dy+kh*0. );
       glVertex2d ( dx-kb*1., dy+kh*0. );
       glVertex2d ( dx-kb*1., dy+kh*1. );
       glVertex2d ( dx-kb*0., dy+kh*1. );
     glEnd();
-    glDisable(GL_TEXTURE_1D);
 
     if(flag==0)
     {

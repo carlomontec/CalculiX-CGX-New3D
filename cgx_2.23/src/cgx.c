@@ -5916,9 +5916,17 @@ void moveModel()
 void drawRuler( void )
 {
   float dxscal;
+  glMatrixMode(GL_PROJECTION);
+  glPushMatrix();
+  glLoadIdentity();
+  glOrtho(-1.0, 1.0, -1.0, 1.0, -1.0, 1.0);
+  glMatrixMode(GL_MODELVIEW);
+  glPushMatrix();
+  glLoadIdentity();
+
   glColor3dv( foregrndcol_rgb );
-  glLineWidth(1);
-  //printf(”window dx in model coords:%f\n", ds*aspectRatio_w1*scale->w*2);
+  glLineWidth(1.4f);
+  //printf("window dx in model coords:%f\n", ds*aspectRatio_w1*scale->w*2);
   sprintf (buffer, "%.0e %s", ds*scale->w*.5, rulerString);
   dxscal=atof(buffer)/(ds*scale->w);
   //printf("dxscal:%f %s %.3e\n", dxscal, buffer, ds*scale->w*.5);
@@ -5931,6 +5939,11 @@ void drawRuler( void )
     glVertex3d ( 1.-(0.68-dxscal)/aspectRatio_w1, -.95, -0.99);
     glVertex3d ( 1.-(0.72-dxscal)/aspectRatio_w1, -.99, -0.99);
   glEnd();
+
+  glMatrixMode(GL_PROJECTION);
+  glPopMatrix();
+  glMatrixMode(GL_MODELVIEW);
+  glPopMatrix();
 }
 
 
@@ -6829,8 +6842,11 @@ void iniDrawMenu()
   glClearColor ( backgrndcol_rgb[0], backgrndcol_rgb[1], backgrndcol_rgb[2], backgrndcol_rgb[3] ); 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+  glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  glOrtho( -1., 1., -1., 1., -1., 1. ); /* nach glLoadIdentity() !! */
+  glOrtho( -1., 1., -1., 1., -1., 1. );
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
 
   glColor3dv( foregrndcol_rgb );
   if (frameFlag)
