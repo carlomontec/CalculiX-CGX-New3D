@@ -29,6 +29,7 @@
 /* External references from CGX */
 extern int mainmenu;
 extern int activWindow;
+extern int w0, w1, w2, w3;
 extern void cgx_execute_command_string(const char *cmd_str);
 
 /* Window definition */
@@ -1572,7 +1573,16 @@ void glutMainLoop(void)
 
   while (!glfwWindowShouldClose(g_glfw_window))
   {
-    glfwPollEvents();
+    /* During startup (idle func active) or when redisplay is pending, poll events.
+       When truly idle, block with a timeout to save CPU/GPU cycles. */
+    if (g_idle_func || g_need_redisplay)
+    {
+      glfwPollEvents();
+    }
+    else
+    {
+      glfwWaitEventsTimeout(0.05);
+    }
     process_queued_commands();
 
     if (g_idle_func)
@@ -1590,17 +1600,20 @@ void glutMainLoop(void)
       double scale_x = (win_w > 0) ? (double)fb_w / (double)win_w : 1.0;
       double scale_y = (win_h > 0) ? (double)fb_h / (double)win_h : 1.0;
 
-      /* Render root window (w0) */
+      /* Render root window (w0) with GL state isolation */
       CGXWindow *root = get_window(1);
       if (root && root->display_func)
       {
         g_current_window_id = 1;
         glViewport(0, 0, fb_w, fb_h);
         glDisable(GL_SCISSOR_TEST);
+        glPushAttrib(GL_ALL_ATTRIB_BITS);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         root->display_func();
+        glPopAttrib();
       }
 
-      /* Render subwindows (w1 3D model, w2 color legend/axes triad) */
+      /* Render subwindows (w1 3D model, w2 axes triad, w3, etc.) */
       for (int i = 0; i < g_num_windows; i++)
       {
         CGXWindow *win = &g_windows[i];
@@ -1616,15 +1629,26 @@ void glutMainLoop(void)
         int vp_w = (int)(sw * scale_x);
         int vp_h = (int)(sh * scale_y);
 
-        glPushAttrib(GL_ALL_ATTRIB_BITS);
         glViewport(vp_x, vp_y, vp_w, vp_h);
         glEnable(GL_SCISSOR_TEST);
         glScissor(vp_x, vp_y, vp_w, vp_h);
 
+        /* Only isolate GL state for non-w1 subwindows (e.g. w2 DrawAxes, w3 cmdline, etc.)
+           w1 (the 3D viewport) inherits and maintains the active polygon mode (LINES/DOTS/FILL) */
+        int is_w1 = (win->id == w1 || win->id == 2);
+        if (!is_w1)
+        {
+          glPushAttrib(GL_ALL_ATTRIB_BITS);
+          glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        }
+
         win->display_func();
 
         glDisable(GL_SCISSOR_TEST);
-        glPopAttrib();
+        if (!is_w1)
+        {
+          glPopAttrib();
+        }
       }
 
       /* 2D UI Overlay Pass: Command Bar & Multi-Level Cascade Popup Menu */
@@ -1668,13 +1692,6 @@ void glutMainLoop(void)
       glPopAttrib();
 
       glfwSwapBuffers(g_glfw_window);
-      /* Poll events once after swapping to drain the queue */
-      glfwPollEvents();
-    }
-    else
-    {
-      /* Wait for events instead of spinning CPU/GPU, with a 50ms timeout to maintain responsiveness */
-      glfwWaitEventsTimeout(0.05);
     }
   }
 
