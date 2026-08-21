@@ -248,12 +248,12 @@ int entitycols;
 Entitycol *entitycol;
 GLfloat   edgeWidth=2.5f;             /* width of the model edges, changed with 'view' */
 
-int   submenu_load=-1, submenu_view=-1, mainmenu=-1;        /* menu identifier */
+int   submenu_load=-1, submenu_view=-1, submenu_gui=-1, mainmenu=-1;        /* menu identifier */
 int   submenu_scala=-1, submenu_animate=-1, submenu_cut=-1, submenu_graph=-1, submenu_help=-1;
 int   submenu_orientation=-1, submenu_hardcopy=-1, submenu_user=-1;
 int   subsubmenu_entity=-1, subsubmenu_parameter=-1;
 int   subsubmenu_animTune=-1, subsubmenu_animSteps=-1;
-int   subsubmenu_animPeriod=-1, subsubmenu_colormap=-1;
+int   subsubmenu_animPeriod=-1, subsubmenu_colormap=-1, subsubmenu_fontsize=-1;
 
 GLfloat lmodel_twoside =  GL_TRUE ;
 GLfloat lmodel_oneside =  GL_FALSE ;
@@ -3889,6 +3889,7 @@ void createNewMainMenu(void)
     mainmenu = glutCreateMenu( menu );
     if(anz->l>0) glutAddSubMenu  ( "Datasets   ", submenu_load );
     glutAddSubMenu  ( "Viewing     ", submenu_view );
+    glutAddSubMenu  ( "GUI Settings", submenu_gui );
     glutAddSubMenu  ( "Animate     ", submenu_animate );
     glutAddMenuEntry( "Frame       ", 1);
     glutAddMenuEntry( "Zoom        ", 2);
@@ -4460,6 +4461,49 @@ void selectView( int selection )
 }
 
 
+void selectFontSize(int value)
+{
+  switch (value)
+  {
+    case 1: /* Compact (12px) */
+      legend_font = 1;
+      draw_font = 1;
+      printf("\n [GUI] Font size set to Compact (12px).\n\n");
+      break;
+    case 2: /* Normal (18px) */
+      legend_font = 4;
+      draw_font = 4;
+      printf("\n [GUI] Font size set to Normal (18px).\n\n");
+      break;
+    case 3: /* Large / +50% (24px) */
+      legend_font = 5;
+      draw_font = 5;
+      printf("\n [GUI] Font size set to Large (+50%% / 24px).\n\n");
+      break;
+  }
+  updateDispLists();
+  glutSetWindow(w0);
+  glutPostRedisplay();
+}
+
+
+void selectGUI(int value)
+{
+  switch (value)
+  {
+    case 1: /* Toggle Dark Mode / Light Mode */
+      selectView(11);
+      break;
+    case 2: /* Toggle Perspective 3D */
+      selectView(19);
+      break;
+    case 3: /* Toggle Command Line Bar */
+      menu(5);
+      break;
+  }
+}
+
+
 void pre_animate(char *string)
 {
   char type[MAX_LINE_LENGTH], param[MAX_LINE_LENGTH];
@@ -4602,13 +4646,26 @@ void pre_view(char *string)
   {
     if(length==2)
     {
-      if (compare(param, "k", 1)==1) { foregrndcol=0; backgrndcol=1; }
-      else if (compare(param, "w", 1)==1) { foregrndcol=1; backgrndcol=0; }
+      if (compare(param, "k", 1)==1) { foregrndcol=1; backgrndcol=0; }
+      else if (compare(param, "w", 1)==1) { foregrndcol=0; backgrndcol=1; }
     }
-    if(foregrndcol) { foregrndcol=0; foregrndcol_rgb[0]=foregrndcol_rgb[1]=foregrndcol_rgb[2]=foregrndcol_rgb[3]=0.; }
-    else            { foregrndcol=1; foregrndcol_rgb[0]=foregrndcol_rgb[1]=foregrndcol_rgb[2]=foregrndcol_rgb[3]=1.; }
-    if(backgrndcol) { backgrndcol=0; backgrndcol_rgb[0]=backgrndcol_rgb[1]=backgrndcol_rgb[2]=backgrndcol_rgb[3]=0.; }
-    else            { backgrndcol=1; backgrndcol_rgb[0]=backgrndcol_rgb[1]=backgrndcol_rgb[2]=backgrndcol_rgb[3]=1.; }
+    else
+    {
+      backgrndcol = !backgrndcol;
+      foregrndcol = !foregrndcol;
+    }
+    if(!backgrndcol)
+    {
+      backgrndcol_rgb[0]=0.05; backgrndcol_rgb[1]=0.07; backgrndcol_rgb[2]=0.10; backgrndcol_rgb[3]=1.0;
+      foregrndcol_rgb[0]=0.92; foregrndcol_rgb[1]=0.95; foregrndcol_rgb[2]=0.98; foregrndcol_rgb[3]=1.0;
+      printf("\n Dark Mode enabled.\n\n");
+    }
+    else
+    {
+      backgrndcol_rgb[0]=1.0; backgrndcol_rgb[1]=1.0; backgrndcol_rgb[2]=1.0; backgrndcol_rgb[3]=1.0;
+      foregrndcol_rgb[0]=0.0; foregrndcol_rgb[1]=0.0; foregrndcol_rgb[2]=0.0; foregrndcol_rgb[3]=1.0;
+      printf("\n Light Mode enabled.\n\n");
+    }
     for (i=0; i<anzGeo->psets; i++ )
     {
       if(pset[i].col==0) pset[i].col=1;
@@ -5849,10 +5906,22 @@ void initModel(char *string)
   if (cull==GL_BACK) cullFlag=0;
   else cullFlag=1;
 
-  if(!foregrndcol) { foregrndcol_rgb[0]=foregrndcol_rgb[1]=foregrndcol_rgb[2]=foregrndcol_rgb[3]=0.; }
-  else            { foregrndcol_rgb[0]=foregrndcol_rgb[1]=foregrndcol_rgb[2]=foregrndcol_rgb[3]=1.; }
-  if(!backgrndcol) { backgrndcol_rgb[0]=backgrndcol_rgb[1]=backgrndcol_rgb[2]=backgrndcol_rgb[3]=0.; }
-  else            { backgrndcol_rgb[0]=backgrndcol_rgb[1]=backgrndcol_rgb[2]=backgrndcol_rgb[3]=1.; }
+  if(!foregrndcol)
+  {
+    foregrndcol_rgb[0]=0.0; foregrndcol_rgb[1]=0.0; foregrndcol_rgb[2]=0.0; foregrndcol_rgb[3]=1.0;
+  }
+  else
+  {
+    foregrndcol_rgb[0]=0.92; foregrndcol_rgb[1]=0.95; foregrndcol_rgb[2]=0.98; foregrndcol_rgb[3]=1.0;
+  }
+  if(!backgrndcol)
+  {
+    backgrndcol_rgb[0]=0.05; backgrndcol_rgb[1]=0.07; backgrndcol_rgb[2]=0.10; backgrndcol_rgb[3]=1.0;
+  }
+  else
+  {
+    backgrndcol_rgb[0]=1.0; backgrndcol_rgb[1]=1.0; backgrndcol_rgb[2]=1.0; backgrndcol_rgb[3]=1.0;
+  }
   for (i=0; i<anzGeo->psets; i++ )
   {
     if(pset[i].col==0) pset[i].col=1;
@@ -7703,6 +7772,17 @@ int main( int argc, char **argv )
 
   subsubmenu_colormap = glutCreateMenu( changeColormap );
   for(i=0; i<cmaps; i++) glutAddMenuEntry(cmap_names[i], i+1);
+
+  subsubmenu_fontsize = glutCreateMenu( selectFontSize );
+  glutAddMenuEntry("Compact (12px)", 1);
+  glutAddMenuEntry("Normal (18px)", 2);
+  glutAddMenuEntry("Large (+50% / 24px)", 3);
+
+  submenu_gui = glutCreateMenu( selectGUI );
+  glutAddMenuEntry("Toggle Dark Mode", 1);
+  glutAddMenuEntry("Toggle Perspective 3D", 2);
+  glutAddMenuEntry("Toggle Command Line Bar", 3);
+  glutAddSubMenu  ("Text Size", subsubmenu_fontsize );
   
   submenu_view = glutCreateMenu( selectView );
   glutAddMenuEntry("Show All Elements With Light", 1);

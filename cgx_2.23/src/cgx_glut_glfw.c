@@ -821,27 +821,10 @@ static void render_command_bar(int win_w, int win_h)
   if (g_cmd_len > 0)
   {
     draw_ui_text_large(28, bar_y + 24, g_cmd_buf, 1.0f, 1.0f, 1.0f, win_h);
-
-    /* Blinking Cursor at the precise proportional text end */
-    if ((clock() / (CLOCKS_PER_SEC / 3)) % 2 == 0)
-    {
-      int text_w = glutBitmapLength(GLUT_BITMAP_HELVETICA_18, (const unsigned char*)g_cmd_buf);
-      int cur_x = 28 + text_w + 1;
-      glColor4f(0.25f, 0.80f, 1.0f, 0.95f);
-      glRectf(cur_x, win_h - (bar_y + 27), cur_x + 2, win_h - (bar_y + 9));
-    }
   }
   else
   {
     draw_ui_text_large(28, bar_y + 24, "Type command (e.g. ds 4 e 4, plot fv all, anim real, view persp)...", 0.38f, 0.46f, 0.56f, win_h);
-
-    /* Blinking Cursor when empty */
-    if ((clock() / (CLOCKS_PER_SEC / 3)) % 2 == 0)
-    {
-      int cur_x = 28;
-      glColor4f(0.25f, 0.80f, 1.0f, 0.95f);
-      glRectf(cur_x, win_h - (bar_y + 27), cur_x + 2, win_h - (bar_y + 9));
-    }
   }
 
   /* Send Button */
