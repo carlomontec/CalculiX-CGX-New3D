@@ -32,9 +32,38 @@ The objective is to explore agent-assisted refactoring by modernizing CGX's wind
 
 ---
 
-## Build Instructions
+## Quick Start (Universal 1-Liner)
 
-> **Platform Status**: Currently developed and tested on macOS. Linux and Windows builds are implemented in the cross-platform GLFW layer and testing is coming soon.
+Install and run **CalculiX GraphiX (GLFW Edition)** on **macOS (Apple Silicon / Intel)** or **Linux (Ubuntu, Debian, RHEL, Rocky, Fedora, Arch)** with a single command:
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/carlomontec/CalculiX-GraphiX-GLFW/main/install.sh)"
+```
+
+### Installation Options:
+When prompted, you can choose:
+* **Option 1: Fast Install (Default)**: Automatically checks runtime libraries and downloads the matching pre-compiled release binary (**macOS arm64** or **Linux x86_64**). Ready in 2 seconds!
+* **Option 2: Build from Source**: Automatically installs development toolchains and compiles locally with `-O3 -march=native` for maximum hardware performance on your CPU.
+
+> **Unattended / CI Usage**:
+> ```bash
+> ./install.sh --binary   # Fast pre-built install
+> ./install.sh --build    # Local CPU-optimized compilation
+> ```
+
+---
+
+## Platform Support & Roadmap
+
+* **macOS (Apple Silicon & Intel)**: Fully supported via Cocoa + GLFW3.
+* **Linux (Wayland & X11)**: Fully supported across Ubuntu, Debian, RHEL, Rocky, Fedora, Arch.
+* **Windows (Native)**: **On the way!** Native Windows support and standalone `.exe` installers are currently in active development and will arrive in an upcoming release.
+
+---
+
+## Manual Build Instructions
+
+If you prefer to build manually from the cloned repository:
 
 ### macOS
 
@@ -43,10 +72,9 @@ The objective is to explore agent-assisted refactoring by modernizing CGX's wind
    brew install glfw
    ```
 
-2. **Clone & Compile**:
+2. **Compile**:
    ```bash
-   git clone https://github.com/carlomontec/CalculiX-GraphiX-GLFW.git
-   cd CalculiX-GraphiX-GLFW/cgx_2.23/src
+   cd cgx_2.23/src
    make -f Makefile.glfw -j$(sysctl -n hw.ncpu)
    ```
 
@@ -57,7 +85,7 @@ The objective is to explore agent-assisted refactoring by modernizing CGX's wind
 
 ---
 
-### Linux (Ubuntu, Debian, Fedora, Arch, openSUSE)
+### Linux (Ubuntu, Debian, Fedora, RHEL, Arch)
 
 1. **Install Prerequisites**:
    * **Ubuntu / Debian / Linux Mint**:
@@ -66,44 +94,22 @@ The objective is to explore agent-assisted refactoring by modernizing CGX's wind
      ```
    * **Fedora / RHEL / Rocky**:
      ```bash
-     sudo dnf install -y gcc-c++ glfw-devel mesa-libGL-devel mesa-libGLU-devel
+     sudo dnf install -y gcc-c++ make glfw-devel mesa-libGL-devel mesa-libGLU-devel
      ```
    * **Arch Linux / Manjaro**:
      ```bash
      sudo pacman -S --needed base-devel glfw-x11 mesa glu
      ```
 
-2. **Clone & Compile**:
+2. **Compile**:
    ```bash
-   git clone https://github.com/carlomontec/CalculiX-GraphiX-GLFW.git
-   cd CalculiX-GraphiX-GLFW/cgx_2.23/src
+   cd cgx_2.23/src
    make -f Makefile.glfw -j$(nproc)
    ```
 
 3. **Launch**:
    ```bash
    ../../bin/cgx_glfw
-   ```
-
----
-
-### Windows (MSYS2 / MinGW-w64)
-
-1. **Install Prerequisites in MSYS2 UCRT64 / MINGW64 Terminal**:
-   ```bash
-   pacman -S --needed base-devel mingw-w64-x86_64-gcc mingw-w64-x86_64-glfw
-   ```
-
-2. **Clone & Compile**:
-   ```bash
-   git clone https://github.com/carlomontec/CalculiX-GraphiX-GLFW.git
-   cd CalculiX-GraphiX-GLFW/cgx_2.23/src
-   make -f Makefile.glfw -j$(nproc)
-   ```
-
-3. **Launch**:
-   ```bash
-   ../../bin/cgx_glfw.exe
    ```
 
 ---

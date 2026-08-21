@@ -262,7 +262,20 @@ int glutCreateWindow(const char *title)
   g_glfw_window = glfwCreateWindow(g_init_w, g_init_h, title, NULL, NULL);
   if (!g_glfw_window)
   {
-    fprintf(stderr, "ERROR: Failed to create GLFW window\n");
+    /* Fallback for remote X11 / XQuartz / software rasterizers: relax framebuffer hints */
+    glfwDefaultWindowHints();
+    g_glfw_window = glfwCreateWindow(g_init_w, g_init_h, title, NULL, NULL);
+  }
+
+  if (!g_glfw_window)
+  {
+    fprintf(stderr, "\n===============================================================\n");
+    fprintf(stderr, "ERROR: Failed to create GLFW window.\n");
+    fprintf(stderr, "If using SSH with XQuartz, try running on your Mac:\n");
+    fprintf(stderr, "  defaults write org.xquartz.X11 enable_iglx 1\n");
+    fprintf(stderr, "and on Linux before running:\n");
+    fprintf(stderr, "  export LIBGL_ALWAYS_INDIRECT=1\n");
+    fprintf(stderr, "===============================================================\n\n");
     glfwTerminate();
     exit(EXIT_FAILURE);
   }
@@ -655,6 +668,10 @@ static void init_truetype_fonts(void)
     "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
     "/usr/share/fonts/TTF/DejaVuSans.ttf",
     "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+    "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf",
+    "/usr/share/fonts/adwaita-sans-fonts/AdwaitaSans-Regular.ttf",
+    "/usr/share/fonts/liberation-sans-fonts/LiberationSans-Regular.ttf",
+    "/usr/share/fonts/google-droid-sans-fonts/DroidSans.ttf",
     "C:\\Windows\\Fonts\\arial.ttf",
     NULL
   };

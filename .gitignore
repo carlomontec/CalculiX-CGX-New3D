@@ -2,4 +2,10 @@
 *~
 *.o
 *.a
+bin/
 cgx
+*.12d
+*.cvg
+*.sta
+spooles.out
+all.vtu

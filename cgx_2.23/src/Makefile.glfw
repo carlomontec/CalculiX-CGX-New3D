@@ -11,25 +11,39 @@ UNAME_S := $(shell uname -s)
 CC = gcc
 CXX = g++
 
-CFLAGS = -O2 -Wall -Wno-narrowing -DUSE_GLFW \
-  -I./ \
-  -I../../libSNL/src
+INCLUDES = -I./ -I../../libSNL/src
+CFLAGS = -O2 -std=gnu17 -Wall -Wno-narrowing -DUSE_GLFW $(INCLUDES)
+CXXFLAGS = -O2 -std=c++17 -Wall -Wno-narrowing -DUSE_GLFW $(INCLUDES)
 
 ifeq ($(UNAME_S),Darwin)
   # macOS native configuration (Zero X11 / Zero XQuartz / Zero GLUT)
+  INCLUDES += -I/opt/homebrew/include -I/opt/homebrew/Cellar/glfw/3.5.1/include
   CFLAGS += -I/opt/homebrew/include -I/opt/homebrew/Cellar/glfw/3.5.1/include
+  CXXFLAGS += -I/opt/homebrew/include -I/opt/homebrew/Cellar/glfw/3.5.1/include
   LFLAGS = -L/opt/homebrew/lib -L/opt/homebrew/Cellar/glfw/3.5.1/lib -lglfw \
            -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo \
            -lm -lpthread
 else ifneq ($(findstring MINGW,$(UNAME_S))$(findstring MSYS,$(UNAME_S))$(findstring CYGWIN,$(UNAME_S))$(findstring Windows,$(OS)),)
   # Windows MinGW-w64 / MSYS2 configuration
   CFLAGS += -DWIN32 $(shell pkg-config --cflags glfw3 2>/dev/null)
+  CXXFLAGS += -DWIN32 $(shell pkg-config --cflags glfw3 2>/dev/null)
   LFLAGS = $(shell pkg-config --libs glfw3 2>/dev/null || echo "-lglfw3") -lopengl32 -lglu32 -lgdi32 -luser32 -lkernel32 -lm -lpthread
   OUT = ../../../bin/cgx_glfw.exe
 else
   # Linux configuration (Native Wayland & X11 via GLFW)
-  CFLAGS += $(shell pkg-config --cflags glfw3 2>/dev/null)
-  LFLAGS = $(shell pkg-config --libs glfw3 2>/dev/null || echo "-lglfw") -lGL -lGLU -lm -lpthread -ldl
+  ifneq ($(wildcard /home/linuxbrew/.linuxbrew/include/GLFW/glfw3.h),)
+    CFLAGS += -I/home/linuxbrew/.linuxbrew/include
+    CXXFLAGS += -I/home/linuxbrew/.linuxbrew/include
+    LFLAGS = -L/home/linuxbrew/.linuxbrew/lib -lglfw -lGL -lGLU -lm -lpthread -ldl
+  else ifneq ($(wildcard $(HOME)/.linuxbrew/include/GLFW/glfw3.h),)
+    CFLAGS += -I$(HOME)/.linuxbrew/include
+    CXXFLAGS += -I$(HOME)/.linuxbrew/include
+    LFLAGS = -L$(HOME)/.linuxbrew/lib -lglfw -lGL -lGLU -lm -lpthread -ldl
+  else
+    CFLAGS += $(shell pkg-config --cflags glfw3 2>/dev/null)
+    CXXFLAGS += $(shell pkg-config --cflags glfw3 2>/dev/null)
+    LFLAGS = $(shell pkg-config --libs glfw3 2>/dev/null || echo "-lglfw") -lGL -lGLU -lm -lpthread -ldl
+  endif
 endif
 
 include Makefile.inc
@@ -45,7 +59,7 @@ CPP_SRC = \
  generateTet.cpp \
  $(wildcard ../../libSNL/src/*.cpp)
 
-OUT = ../../../bin/cgx_glfw
+OUT = ../../bin/cgx_glfw
 
 SRCS = $(SLIB) $(ULIB) $(GLFW_LIB)
 OBJS = $(SRCS:.c=.o)
@@ -54,15 +68,16 @@ CPP_OBJS = $(CPP_SRC:.cpp=.o)
 all: $(OUT)
 
 $(OUT): $(OBJS) $(CPP_OBJS)
-	@mkdir -p ../../../bin
+	@mkdir -p ../../bin
 	$(CXX) $(CFLAGS) $(OBJS) $(CPP_OBJS) -o $(OUT) $(LFLAGS)
+	@mkdir -p ../../../bin && cp -f $(OUT) ../../../bin/cgx_glfw 2>/dev/null || true
 	@echo ">>> SUCCESS: Built $(OUT) <<<"
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 %.o: %.cpp
-	$(CXX) $(CFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
 	rm -f $(OBJS) $(CPP_OBJS) $(OUT)

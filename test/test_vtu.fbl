@@ -1,0 +1,2 @@
+read test/beam10p.frd
+send all vtu all
