@@ -167,7 +167,7 @@
                               GLUT_BITMAP_TIMES_ROMAN_24}
 #define     GLUT_FONT_WIDTH  { 5,6,8,9,10,11 }
 #define     GLUT_FONT_HEIGHT  { 16,18,18,18,20,24 }
-#define     DEF_GLUT_FONT      4          /* indx starts with 0 (4 = GLUT_BITMAP_HELVETICA_18) */
+#define     DEF_GLUT_FONT      5          /* indx starts with 0 (5 = GLUT_BITMAP_TIMES_ROMAN_24) */
 #define     SUM_GLUT_FONTS     6
 
 /* glu steps seem to be restricted */

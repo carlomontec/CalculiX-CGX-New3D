@@ -7663,7 +7663,7 @@ int main( int argc, char **argv )
   /* problems with xwd on sgi without GLUT_DEPTH */
   glutInitDisplayMode ( GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH );
   glutInit ( &argc, argv );
-  sprintf (buffer, "CalculiX GraphiX (new Engine)");
+  sprintf (buffer, "CalculiX GraphiX (GLFW Edition)");
   activWindow= w0 = glutCreateWindow ( buffer );
   glutDisplayFunc ( DrawMenuSet );
   glShadeModel ( GL_FLAT );

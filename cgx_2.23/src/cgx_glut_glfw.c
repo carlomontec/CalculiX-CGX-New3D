@@ -16,9 +16,9 @@
 #define MAX_MENUS   128
 #define MAX_MENU_ITEMS 128
 #define MAX_MENU_DEPTH 8
-#define CMD_BAR_HEIGHT 44
-#define MENU_ITEM_HEIGHT 34
-#define MENU_BOX_WIDTH 285
+#define CMD_BAR_HEIGHT 48
+#define MENU_ITEM_HEIGHT 38
+#define MENU_BOX_WIDTH 320
 
 /* External references from CGX */
 extern int mainmenu;
@@ -778,18 +778,18 @@ static void draw_cascade_menu(CGXMenuCascade *c, int win_h)
       glColor4f(0.25f, 0.75f, 1.0f, 1.0f);
       glRectf(start_x + 2, win_h - (item_y + MENU_ITEM_HEIGHT), start_x + 5, win_h - item_y);
 
-      draw_ui_text_large(start_x + 16, item_y + 24, menu->items[i].label, 1.0f, 1.0f, 1.0f, win_h);
+      draw_ui_text_large(start_x + 18, item_y + 26, menu->items[i].label, 1.0f, 1.0f, 1.0f, win_h);
       if (menu->items[i].is_submenu)
       {
-        draw_ui_text_large(start_x + menu_w - 24, item_y + 24, ">", 0.40f, 0.85f, 1.0f, win_h);
+        draw_ui_text_large(start_x + menu_w - 24, item_y + 26, ">", 0.40f, 0.85f, 1.0f, win_h);
       }
     }
     else
     {
-      draw_ui_text_large(start_x + 16, item_y + 24, menu->items[i].label, 0.90f, 0.94f, 0.98f, win_h);
+      draw_ui_text_large(start_x + 18, item_y + 26, menu->items[i].label, 0.90f, 0.94f, 0.98f, win_h);
       if (menu->items[i].is_submenu)
       {
-        draw_ui_text_large(start_x + menu_w - 24, item_y + 24, ">", 0.45f, 0.58f, 0.72f, win_h);
+        draw_ui_text_large(start_x + menu_w - 24, item_y + 26, ">", 0.45f, 0.58f, 0.72f, win_h);
       }
     }
   }
@@ -815,40 +815,41 @@ static void render_command_bar(int win_w, int win_h)
   glEnd();
 
   /* Prompt Symbol (Bright Cyan >) */
-  draw_ui_text_large(14, bar_y + 29, ">", 0.25f, 0.80f, 1.0f, win_h);
+  draw_ui_text_large(16, bar_y + 31, ">", 0.25f, 0.80f, 1.0f, win_h);
 
   /* Input Text or Placeholder */
   if (g_cmd_len > 0)
   {
-    draw_ui_text_large(34, bar_y + 29, g_cmd_buf, 1.0f, 1.0f, 1.0f, win_h);
+    draw_ui_text_large(38, bar_y + 31, g_cmd_buf, 1.0f, 1.0f, 1.0f, win_h);
 
     /* Blinking Cursor at the precise proportional text end */
     if ((clock() / (CLOCKS_PER_SEC / 3)) % 2 == 0)
     {
       int text_w = glutBitmapLength(GLUT_BITMAP_HELVETICA_18, (const unsigned char*)g_cmd_buf);
-      int cur_x = 34 + text_w + 2;
+      int cur_x = 38 + text_w + 2;
       glColor4f(0.25f, 0.80f, 1.0f, 0.95f);
-      glRectf(cur_x, win_h - (bar_y + 31), cur_x + 2, win_h - (bar_y + 13));
+      glRectf(cur_x, win_h - (bar_y + 34), cur_x + 2, win_h - (bar_y + 14));
     }
   }
   else
   {
-    draw_ui_text_large(34, bar_y + 29, "Type command (e.g. ds 4 e 4, plot fv all, anim real, view persp)...", 0.38f, 0.46f, 0.56f, win_h);
+    draw_ui_text_large(38, bar_y + 31, "Type command (e.g. ds 4 e 4, plot fv all, anim real, view persp)...", 0.38f, 0.46f, 0.56f, win_h);
 
     /* Blinking Cursor when empty */
     if ((clock() / (CLOCKS_PER_SEC / 3)) % 2 == 0)
     {
-      int cur_x = 34;
+      int cur_x = 38;
       glColor4f(0.25f, 0.80f, 1.0f, 0.95f);
-      glRectf(cur_x, win_h - (bar_y + 31), cur_x + 2, win_h - (bar_y + 13));
+      glRectf(cur_x, win_h - (bar_y + 34), cur_x + 2, win_h - (bar_y + 14));
     }
   }
 
   /* Send Button */
-  int btn_x1 = win_w - 104;
-  int btn_x2 = win_w - 12;
-  int btn_y1 = bar_y + 6;
-  int btn_y2 = bar_y + 38;
+  int btn_x1 = win_w - 110;
+  int btn_x2 = win_w - 14;
+  int btn_y1 = bar_y + 7;
+  int btn_y2 = bar_y + 41;
+  int btn_w = btn_x2 - btn_x1;
 
   if (g_send_hovered)
   {
@@ -861,7 +862,10 @@ static void render_command_bar(int win_w, int win_h)
   glRectf(btn_x1, win_h - btn_y2, btn_x2, win_h - btn_y1);
 
   /* Button Border */
-  glColor4f(0.30f, 0.65f, 1.0f, 1.0f);
+  if (g_send_hovered)
+    glColor4f(0.40f, 0.75f, 1.0f, 1.0f);
+  else
+    glColor4f(0.30f, 0.65f, 1.0f, 1.0f);
   glLineWidth(1.4f);
   glBegin(GL_LINE_LOOP);
     glVertex2f(btn_x1, win_h - btn_y1);
@@ -870,7 +874,8 @@ static void render_command_bar(int win_w, int win_h)
     glVertex2f(btn_x1, win_h - btn_y2);
   glEnd();
 
-  draw_ui_text_large(btn_x1 + 20, bar_y + 28, "SEND", 1.0f, 1.0f, 1.0f, win_h);
+  int btn_text_w = glutBitmapLength(GLUT_BITMAP_HELVETICA_18, (const unsigned char*)"SEND");
+  draw_ui_text_large(btn_x1 + (btn_w - btn_text_w) / 2, bar_y + 30, "SEND", 1.0f, 1.0f, 1.0f, win_h);
 }
 
 /* --------------------------------------------------------------------  */
