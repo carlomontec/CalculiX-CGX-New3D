@@ -3,7 +3,7 @@
 > **Modern, High-Performance 3D Visualizer & Pre/Post-Processor for the CalculiX FEA Suite.**
 
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](COPYING)
-[![Platform: macOS | Linux](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux-brightgreen.svg)](#-quick-start--build-instructions)
+[![Platform: macOS | Linux | Windows](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-brightgreen.svg)](#-quick-start--build-instructions)
 [![Backend: GLFW + OpenGL](https://img.shields.io/badge/Engine-GLFW%203%20%2B%20OpenGL-orange.svg)](#-highlights--new-features)
 [![ParaView: Native VTU/PVD](https://img.shields.io/badge/ParaView-Native%20VTU%2FPVD-purple.svg)](#-native-paraview-vtupvd-exporter)
 
@@ -81,6 +81,27 @@ This new engine replaces legacy 1990s X11 / GLUT dependencies with a high-perfor
 3. **Launch**:
    ```bash
    ../../bin/cgx_glfw
+   ```
+
+---
+
+### 🪟 Windows (MSYS2 / MinGW-w64)
+
+1. **Install Prerequisites in MSYS2 UCRT64 / MINGW64 Terminal**:
+   ```bash
+   pacman -S --needed base-devel mingw-w64-x86_64-gcc mingw-w64-x86_64-glfw
+   ```
+
+2. **Clone & Compile**:
+   ```bash
+   git clone https://github.com/carlomontec/CalculiX-CGX-New3D.git
+   cd CalculiX-CGX-New3D/cgx_2.23/src
+   make -f Makefile.glfw -j$(nproc)
+   ```
+
+3. **Launch**:
+   ```bash
+   ../../bin/cgx_glfw.exe
    ```
 
 ---

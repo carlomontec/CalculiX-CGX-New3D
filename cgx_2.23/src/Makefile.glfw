@@ -19,6 +19,11 @@ ifeq ($(UNAME_S),Darwin)
   LFLAGS = -L/opt/homebrew/lib -L/opt/homebrew/Cellar/glfw/3.5.1/lib -lglfw \
            -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo \
            -lm -lpthread
+else ifneq ($(findstring MINGW,$(UNAME_S))$(findstring MSYS,$(UNAME_S))$(findstring CYGWIN,$(UNAME_S))$(findstring Windows,$(OS)),)
+  # Windows MinGW-w64 / MSYS2 configuration
+  CFLAGS += -DWIN32 $(shell pkg-config --cflags glfw3 2>/dev/null)
+  LFLAGS = $(shell pkg-config --libs glfw3 2>/dev/null || echo "-lglfw3") -lopengl32 -lglu32 -lgdi32 -luser32 -lkernel32 -lm -lpthread
+  OUT = ../../../bin/cgx_glfw.exe
 else
   # Linux configuration (Native Wayland & X11 via GLFW)
   CFLAGS += $(shell pkg-config --cflags glfw3 2>/dev/null)

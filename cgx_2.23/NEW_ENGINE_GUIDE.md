@@ -55,6 +55,21 @@ make -f Makefile.glfw -j$(nproc)
 
 ---
 
+### 3. Windows (MSYS2 / MinGW-w64)
+Install GLFW & GCC in the MSYS2 UCRT64/MINGW64 environment:
+```bash
+pacman -S --needed base-devel mingw-w64-x86_64-gcc mingw-w64-x86_64-glfw
+```
+
+Build `cgx_glfw.exe`:
+```bash
+cd cgx_2.23/src
+make -f Makefile.glfw -j$(nproc)
+```
+The compiled binary will be placed at `cgx/bin/cgx_glfw.exe`.
+
+---
+
 ## 🎮 Controls & Shortcuts Reference
 
 ### Mouse Controls
