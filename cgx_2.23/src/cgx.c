@@ -3889,7 +3889,6 @@ void createNewMainMenu(void)
     mainmenu = glutCreateMenu( menu );
     if(anz->l>0) glutAddSubMenu  ( "Datasets   ", submenu_load );
     glutAddSubMenu  ( "Viewing     ", submenu_view );
-    glutAddSubMenu  ( "Colormap    ", subsubmenu_colormap );
     glutAddSubMenu  ( "Animate     ", submenu_animate );
     glutAddMenuEntry( "Frame       ", 1);
     glutAddMenuEntry( "Zoom        ", 2);
