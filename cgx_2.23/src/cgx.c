@@ -4615,24 +4615,21 @@ void pre_view(char *string)
   if (compare(type, "fill", 2)==2)
   {
     glPointSize (1);
-    glGetIntegerv( GL_POLYGON_MODE, ipuf );
-    if ( ipuf[1] != GL_FILL )
-      glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+    glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+    redraw();
   }
   else if (compare(type, "line", 2)==2)
   {
-    glGetIntegerv( GL_POLYGON_MODE, ipuf );
-    if ( ipuf[1] != GL_LINE )
-      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
+    redraw();
   }
   else if (compare(type, "point", 2)==2)
   {
     i=atoi(param);
     if(i<1) glPointSize(1);
     else glPointSize(i);
-    glGetIntegerv( GL_POLYGON_MODE, ipuf );
-    if ( ipuf[1] != GL_POINT )
-      glPolygonMode( GL_FRONT_AND_BACK, GL_POINT );
+    glPolygonMode( GL_FRONT_AND_BACK, GL_POINT );
+    redraw();
   }
   else if (compare(type, "persp", 4)==4)
   {

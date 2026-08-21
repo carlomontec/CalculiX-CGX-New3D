@@ -373,7 +373,7 @@ void glutPostRedisplay(void)
 
 void glutSwapBuffers(void)
 {
-  g_need_redisplay = 1;
+  /* No-op: Frame buffer swap is performed centrally in glutMainLoop after all passes */
 }
 
 void glutPositionWindow(int x, int y)
