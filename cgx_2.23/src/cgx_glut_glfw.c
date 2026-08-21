@@ -202,6 +202,42 @@ int cgx_glfw_is_command_bar_visible(void)
 /* --------------------------------------------------------------------  */
 /* Stdin Background Listener Thread for Interactive CLI Commands         */
 /* --------------------------------------------------------------------  */
+#include <pthread.h>
+
+#define MAX_QUEUED_CMDS 64
+static char g_cmd_queue[MAX_QUEUED_CMDS][512];
+static int g_cmd_queue_head = 0;
+static int g_cmd_queue_tail = 0;
+static pthread_mutex_t g_cmd_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static void queue_command(const char *cmd) {
+    pthread_mutex_lock(&g_cmd_queue_mutex);
+    int next = (g_cmd_queue_tail + 1) % MAX_QUEUED_CMDS;
+    if (next != g_cmd_queue_head) {
+        strncpy(g_cmd_queue[g_cmd_queue_tail], cmd, 511);
+        g_cmd_queue[g_cmd_queue_tail][511] = '\0';
+        g_cmd_queue_tail = next;
+    }
+    pthread_mutex_unlock(&g_cmd_queue_mutex);
+    if (g_glfw_window) glfwPostEmptyEvent();
+}
+
+static void process_queued_commands(void) {
+    pthread_mutex_lock(&g_cmd_queue_mutex);
+    while (g_cmd_queue_head != g_cmd_queue_tail) {
+        char cmd[512];
+        strncpy(cmd, g_cmd_queue[g_cmd_queue_head], 512);
+        g_cmd_queue_head = (g_cmd_queue_head + 1) % MAX_QUEUED_CMDS;
+        pthread_mutex_unlock(&g_cmd_queue_mutex);
+        
+        cgx_execute_command_string(cmd);
+        g_need_redisplay = 1;
+        
+        pthread_mutex_lock(&g_cmd_queue_mutex);
+    }
+    pthread_mutex_unlock(&g_cmd_queue_mutex);
+}
+
 static void *stdin_listener_thread(void *arg)
 {
   (void)arg;
@@ -209,7 +245,7 @@ static void *stdin_listener_thread(void *arg)
 
   while (fgets(line, sizeof(line), stdin))
   {
-    cgx_execute_command_string(line);
+    queue_command(line);
 
     strncpy(g_last_cmd_echo, line, sizeof(g_last_cmd_echo) - 1);
     int elen = (int)strlen(g_last_cmd_echo);
@@ -217,9 +253,6 @@ static void *stdin_listener_thread(void *arg)
     {
       g_last_cmd_echo[--elen] = '\0';
     }
-
-    g_need_redisplay = 1;
-    if (g_glfw_window) glfwPostEmptyEvent();
   }
   return NULL;
 }
@@ -1540,6 +1573,7 @@ void glutMainLoop(void)
   while (!glfwWindowShouldClose(g_glfw_window))
   {
     glfwPollEvents();
+    process_queued_commands();
 
     if (g_idle_func)
     {
