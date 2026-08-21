@@ -1683,12 +1683,14 @@ void define_rgb(float v, float *r, float *g, float *b)
 /* schreibt einen Text (x,y,z linkes unteres Eck)  */
 void text(double x, double y, double z,char *msg, void *glut_font)
 {
+  glPushAttrib(GL_POLYGON_BIT | GL_ENABLE_BIT | GL_CURRENT_BIT);
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   glRasterPos3d(x, y, z);
   while (*msg) {
     glutBitmapCharacter(glut_font, *msg);
     msg++;
   }
-  
+  glPopAttrib();
 }
 
 
@@ -1704,6 +1706,14 @@ void scala_rgb( double dx, double dy, int divisions, double bmin, double bmax, d
   static char string[13];
   double     kb, kh;
   int flag=0;
+
+  glPushAttrib(GL_ALL_ATTRIB_BITS);
+  glDisable(GL_CULL_FACE);
+  glDisable(GL_LIGHTING);
+  glDisable(GL_TEXTURE_1D);
+  glDisable(GL_TEXTURE_2D);
+  glDisable(GL_DEPTH_TEST);
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
   df = (bmax-bmin)/divisions;
   f  = bmin;
@@ -1749,6 +1759,7 @@ void scala_rgb( double dx, double dy, int divisions, double bmin, double bmax, d
     glRasterPos2d( (dx+kb*0.2), dy-kh*0.1 );
     for ( j=0; j<10; j++) glutBitmapCharacter(glut_font, string[j]);
   }
+  glPopAttrib();
 }
 
 
@@ -1786,6 +1797,7 @@ void scala_tex(double ratio, double dx, double dy, int divisions, double bmin, d
   glDisable(GL_TEXTURE_1D);
   glDisable(GL_TEXTURE_2D);
   glDisable(GL_DEPTH_TEST);
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
   for (i=0; i<divisions; i++)
   {

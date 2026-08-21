@@ -5989,6 +5989,14 @@ void moveModel()
 void drawRuler( void )
 {
   float dxscal;
+  glPushAttrib(GL_ALL_ATTRIB_BITS);
+  glDisable(GL_LIGHTING);
+  glDisable(GL_DEPTH_TEST);
+  glDisable(GL_CULL_FACE);
+  glDisable(GL_TEXTURE_1D);
+  glDisable(GL_TEXTURE_2D);
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
   glMatrixMode(GL_PROJECTION);
   glPushMatrix();
   glLoadIdentity();
@@ -6017,6 +6025,7 @@ void drawRuler( void )
   glPopMatrix();
   glMatrixMode(GL_MODELVIEW);
   glPopMatrix();
+  glPopAttrib();
 }
 
 
@@ -6595,6 +6604,9 @@ void DrawAxes()
   printf(" in DrawAxes\n");
 #endif 
 
+  glPushAttrib(GL_ALL_ATTRIB_BITS);
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
   glClearColor ( backgrndcol_rgb[0], backgrndcol_rgb[1], backgrndcol_rgb[2], backgrndcol_rgb[3] );
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
@@ -6656,6 +6668,7 @@ void DrawAxes()
     text( -0.5, -0.9, 0.,buffer, glut_font[legend_font] );
   }    
   glutSwapBuffers();
+  glPopAttrib();
 }
 
 
@@ -6911,6 +6924,8 @@ void iniDrawMenu()
 #if TEST
   printf(" in iniDrawMenu\n");
 #endif 
+
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
   glClearColor ( backgrndcol_rgb[0], backgrndcol_rgb[1], backgrndcol_rgb[2], backgrndcol_rgb[3] ); 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

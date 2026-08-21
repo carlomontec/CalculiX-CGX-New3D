@@ -767,10 +767,11 @@ void glutBitmapCharacter(void *font, int character)
   }
   if (fb_w <= 0 || fb_h <= 0) return;
 
-  glPushAttrib(GL_ENABLE_BIT | GL_TEXTURE_BIT | GL_CURRENT_BIT | GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_VIEWPORT_BIT);
+  glPushAttrib(GL_ENABLE_BIT | GL_TEXTURE_BIT | GL_CURRENT_BIT | GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_VIEWPORT_BIT | GL_POLYGON_BIT);
   glDisable(GL_LIGHTING);
   glDisable(GL_DEPTH_TEST);
   glDisable(GL_CULL_FACE);
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   glEnable(GL_TEXTURE_2D);
   glBindTexture(GL_TEXTURE_2D, g_font_atlas[tier].tex_id);
   glEnable(GL_BLEND);
@@ -857,8 +858,9 @@ static void draw_ui_text_dynamic(float x, float y, const char *str, float r, flo
 
   int tex_dim = 1024;
 
-  glPushAttrib(GL_ENABLE_BIT | GL_TEXTURE_BIT | GL_CURRENT_BIT | GL_COLOR_BUFFER_BIT | GL_VIEWPORT_BIT);
+  glPushAttrib(GL_ENABLE_BIT | GL_TEXTURE_BIT | GL_CURRENT_BIT | GL_COLOR_BUFFER_BIT | GL_VIEWPORT_BIT | GL_POLYGON_BIT);
   glViewport(0, 0, fb_w, fb_h);
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   glEnable(GL_TEXTURE_2D);
   glBindTexture(GL_TEXTURE_2D, g_font_atlas[tier].tex_id);
   glEnable(GL_BLEND);
@@ -1083,6 +1085,8 @@ static void draw_cascade_menu(CGXMenuCascade *c, int win_h)
   int menu_w = c->width;
   int total_h = c->height;
 
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
   /* Drop Shadow */
   glColor4f(0.0f, 0.0f, 0.0f, 0.50f);
   glRectf(start_x + 6, win_h - (start_y + total_h + 6), start_x + menu_w + 6, win_h - (start_y + 6));
@@ -1142,6 +1146,8 @@ static void render_command_bar(int win_w, int win_h)
   int bar_h = get_cmd_bar_height();
   int bar_y = win_h - bar_h;
   int baseline_y = bar_y + (int)(bar_h * 0.68f);
+
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
   /* Bar Background - Deep Charcoal Dark Slate (#05070A) */
   glColor4f(0.05f, 0.07f, 0.10f, 0.98f);
@@ -1576,13 +1582,16 @@ void glutMainLoop(void)
         int vp_w = (int)(sw * scale_x);
         int vp_h = (int)(sh * scale_y);
 
+        glPushAttrib(GL_ALL_ATTRIB_BITS);
         glViewport(vp_x, vp_y, vp_w, vp_h);
         glEnable(GL_SCISSOR_TEST);
         glScissor(vp_x, vp_y, vp_w, vp_h);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
         win->display_func();
 
         glDisable(GL_SCISSOR_TEST);
+        glPopAttrib();
       }
 
       /* 2D UI Overlay Pass: Command Bar & Multi-Level Cascade Popup Menu */
@@ -1603,6 +1612,7 @@ void glutMainLoop(void)
       glDisable(GL_LIGHTING);
       glDisable(GL_CULL_FACE);
       glDisable(GL_TEXTURE_2D);
+      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
       glEnable(GL_BLEND);
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -1625,10 +1635,13 @@ void glutMainLoop(void)
       glPopAttrib();
 
       glfwSwapBuffers(g_glfw_window);
+      /* Poll events once after swapping to drain the queue */
+      glfwPollEvents();
     }
     else
     {
-      usleep(8000);
+      /* Wait for events instead of spinning CPU/GPU, with a 50ms timeout to maintain responsiveness */
+      glfwWaitEventsTimeout(0.05);
     }
   }
 
