@@ -1,16 +1,18 @@
-# CalculiX GraphiX (GLFW Edition) 🚀
+# CalculiX GraphiX (GLFW Edition)
 
-> **A Modernized, Cross-Platform 3D FEA Pre/Post-Processor for CalculiX.**
+> **A Modernized multi-platform edition of CalculiX GraphiX.**
 
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](COPYING)
-[![Platform: macOS | Linux | Windows](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-brightgreen.svg)](#-quick-start--build-instructions)
-[![Dependencies: 100% GLUT-Free](https://img.shields.io/badge/Dependencies-100%25%20GLUT--Free%20%26%20X11--Free-success.svg)](#-highlights--new-features)
-[![Graphics: GLFW3 + Modern OpenGL](https://img.shields.io/badge/Graphics-GLFW3%20%2B%20stb__truetype-orange.svg)](#-highlights--new-features)
-[![ParaView: Native VTU/PVD](https://img.shields.io/badge/ParaView-Native%20VTU%2FPVD-purple.svg)](#-native-paraview-vtupvd-exporter)
+[![Platform: macOS | Linux & Windows (Soon)](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%26%20Windows%20(Soon)-brightgreen.svg)](#build-instructions)
+[![Dependencies: 100% GLUT-Free](https://img.shields.io/badge/Dependencies-100%25%20GLUT--Free%20%26%20X11--Free-success.svg)](#highlights--new-features)
+[![Graphics: GLFW3 + Modern OpenGL](https://img.shields.io/badge/Graphics-GLFW3%20%2B%20stb__truetype-orange.svg)](#highlights--new-features)
+[![ParaView: Native VTU/PVD](https://img.shields.io/badge/ParaView-Native%20VTU%2FPVD-purple.svg)](#native-paraview-vtupvd-exporter)
+
+![CalculiX GraphiX GLFW Edition](img/cgx_glfw.png)
 
 ---
 
-## 🌟 About This Project
+## About This Project
 
 This project is an **academic exercise for learning agentic programming** by **Carlo Monjaraz-Tec**, based on the great work of the original authors and contributors of **CalculiX GraphiX (CGX)**, originally led by **Klaus Wittig**.
 
@@ -18,23 +20,23 @@ The objective is to explore agent-assisted refactoring by modernizing CGX's wind
 
 ---
 
-## ✨ Highlights & New Features
+## Highlights & New Features
 
-* 🚀 **100% GLUT-Free & X11-Free**: Completely eliminated legacy 1990s X11, GLX, and raw GLUT dependencies. Windowing and input events are routed through a modern, native **GLFW3** layer across macOS (Apple Silicon / Intel), Linux (Wayland / X11), and Windows.
-* 🖋️ **Anti-Aliased Vector Typography**: Integrated [`stb_truetype`](https://github.com/nothings/stb) single-header font engine. All 3D model node labels, element numbers, dataset legends, the stationary ruler, and UI elements render with **smooth, crisp vector typography** (calibrated at `Small (14pt)`, `Medium (20pt / Default)`, and `Big (32pt)` for 4K/Retina screens).
-* 🌙 **Signature Dark Mode by Default**: Modern dark slate aesthetic (`#0D121A`) with high-contrast foreground rendering.
-* 🎥 **True 3D Perspective Projection**: Active by default with smooth rotational trackball controls and unbounded close-up zooming.
-* ⌨️ **Interactive In-Window Command Bar**: Sleek bottom command strip featuring command history navigation (`Up` / `Down` arrows), instant execution, and visual prompt.
-* 📏 **Stationary 2D Viewport Ruler**: Screen-space isolated orthogonal scale bar, completely unaffected by 3D rotation or zoom.
-* 🎛️ **Modern Cascading Context Menus**: Floating glassmorphism menus with electric-blue hover accents and dedicated `GUI Settings >` controls.
-* 📊 **Native Base64 Binary VTU/PVD Exporter**: 1-click export of complex 1D, 2D, and 3D meshes and transient results to ParaView (`send all vtu all`).
-* 🎨 **Perceptual Scientific Colormaps**: Built-in `coolwarm`, `turbo`, `viridis`, `inferno`, `jet`, `gray`, and `classic` palettes.
+* **100% GLUT-Free & X11-Free**: Free of legacy X11, GLX, and raw GLUT dependencies. Windowing and input events are routed through a modern, native **GLFW3** layer across macOS (Apple Silicon / Intel), Linux (Wayland / X11), and Windows.
+* **Anti-Aliased Vector Typography**: Integrated [`stb_truetype`](https://github.com/nothings/stb) single-header font engine. All  text renders with **smooth, crisp vector typography**.
+* **Signature Dark Mode by Default**: Dark slate aesthetic with high-contrast foreground rendering.
+* **True 3D Perspective Projection**: New implemented Perspective view for 3D Visualization.
+* **Interactive In-Window Command Bar**: New field for commands, with command history navigation (`Up` / `Down` arrows), instant execution, and visual prompt.
+* **Modern Cascading Context Menus**: Updated cascade menus.
+* **Native Base64 Binary VTU/PVD Exporter**: 1-click export of complex 1D, 2D, and 3D meshes and transient results to ParaView (`send all vtu all`).
 
 ---
 
-## 🚀 Quick Start & Build Instructions
+## Build Instructions
 
-### 🍏 macOS
+> **Platform Status**: Currently developed and tested on macOS. Linux and Windows builds are implemented in the cross-platform GLFW layer and testing is coming soon.
+
+### macOS
 
 1. **Install GLFW**:
    ```bash
@@ -55,7 +57,7 @@ The objective is to explore agent-assisted refactoring by modernizing CGX's wind
 
 ---
 
-### 🐧 Linux (Ubuntu, Debian, Fedora, Arch, openSUSE)
+### Linux (Ubuntu, Debian, Fedora, Arch, openSUSE)
 
 1. **Install Prerequisites**:
    * **Ubuntu / Debian / Linux Mint**:
@@ -85,7 +87,7 @@ The objective is to explore agent-assisted refactoring by modernizing CGX's wind
 
 ---
 
-### 🪟 Windows (MSYS2 / MinGW-w64)
+### Windows (MSYS2 / MinGW-w64)
 
 1. **Install Prerequisites in MSYS2 UCRT64 / MINGW64 Terminal**:
    ```bash
@@ -106,7 +108,7 @@ The objective is to explore agent-assisted refactoring by modernizing CGX's wind
 
 ---
 
-## 🎮 Controls & Mouse Gestures
+## Controls & Mouse Gestures
 
 | Gesture | Action |
 | :--- | :--- |
@@ -117,7 +119,7 @@ The objective is to explore agent-assisted refactoring by modernizing CGX's wind
 
 ---
 
-## ⚡ Popular Commands (Type in Bottom Bar)
+## Popular Commands (Type in Bottom Bar)
 
 | Command | Action |
 | :--- | :--- |
@@ -136,7 +138,7 @@ The objective is to explore agent-assisted refactoring by modernizing CGX's wind
 
 ---
 
-## 📦 Native ParaView VTU/PVD Exporter
+## Native ParaView VTU/PVD Exporter
 
 Export your CalculiX models directly to ParaView with full result fields:
 
@@ -150,7 +152,7 @@ send <set> vtu [all] [ascii]
 
 ---
 
-## ⚖️ License & Attribution
+## License & Attribution
 
 This project is free and open-source software distributed under the **GNU General Public License Version 2 (GPL-2.0 or later)**, strictly adhering to the original CalculiX licensing.
 
