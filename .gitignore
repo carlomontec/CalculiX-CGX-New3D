@@ -9,3 +9,5 @@ cgx
 *.sta
 spooles.out
 all.vtu
+cgx_glfw-*
+

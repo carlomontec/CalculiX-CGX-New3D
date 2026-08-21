@@ -13,7 +13,7 @@ CXX = g++
 
 INCLUDES = -I./ -I../../libSNL/src
 CFLAGS = -O2 -std=gnu17 -Wall -Wno-narrowing -DUSE_GLFW $(INCLUDES)
-CXXFLAGS = -O2 -std=c++17 -Wall -Wno-narrowing -DUSE_GLFW $(INCLUDES)
+CXXFLAGS = -O2 -std=c++11 -Wall -Wno-narrowing -Wno-register -DUSE_GLFW $(INCLUDES)
 
 ifeq ($(UNAME_S),Darwin)
   # macOS native configuration (Zero X11 / Zero XQuartz / Zero GLUT)

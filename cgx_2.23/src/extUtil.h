@@ -57,6 +57,7 @@
 /* intpol2.c, spline.c */
 #define     PNTS  10000
 
+#ifndef __cplusplus
 /* from #include "f2c.h" */
 #undef max
 #undef min
@@ -68,6 +69,7 @@
 #define smax(a,b) (float)imax(a,b)
 #define dmin(a,b) (double)imin(a,b)
 #define dmax(a,b) (double)imax(a,b)
+#endif
 
 
 typedef struct {
