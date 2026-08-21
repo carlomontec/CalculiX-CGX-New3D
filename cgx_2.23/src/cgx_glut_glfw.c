@@ -600,7 +600,7 @@ static void draw_ui_text_large(float x, float y, const char *str, float r, float
   glRasterPos2f(x, (float)win_h - y);
   while (*str)
   {
-    glutBitmapCharacter(GLUT_BITMAP_IOSEVKA_18, *str);
+    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *str);
     str++;
   }
 }
@@ -825,7 +825,7 @@ static void render_command_bar(int win_w, int win_h)
     /* Blinking Cursor at the precise proportional text end */
     if ((clock() / (CLOCKS_PER_SEC / 3)) % 2 == 0)
     {
-      int text_w = glutBitmapLength(GLUT_BITMAP_IOSEVKA_18, (const unsigned char*)g_cmd_buf);
+      int text_w = glutBitmapLength(GLUT_BITMAP_HELVETICA_18, (const unsigned char*)g_cmd_buf);
       int cur_x = 28 + text_w + 1;
       glColor4f(0.25f, 0.80f, 1.0f, 0.95f);
       glRectf(cur_x, win_h - (bar_y + 27), cur_x + 2, win_h - (bar_y + 9));
@@ -874,7 +874,7 @@ static void render_command_bar(int win_w, int win_h)
     glVertex2f(btn_x1, win_h - btn_y2);
   glEnd();
 
-  int btn_text_w = glutBitmapLength(GLUT_BITMAP_IOSEVKA_18, (const unsigned char*)"SEND");
+  int btn_text_w = glutBitmapLength(GLUT_BITMAP_HELVETICA_18, (const unsigned char*)"SEND");
   draw_ui_text_large(btn_x1 + (btn_w - btn_text_w) / 2, bar_y + 24, "SEND", 1.0f, 1.0f, 1.0f, win_h);
 }
 

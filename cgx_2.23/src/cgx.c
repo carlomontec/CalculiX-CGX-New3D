@@ -236,10 +236,10 @@ int   animList=0;                           /* die aktuelle Displayliste fuer an
 int   col_maxc=DEF_COL,col_minc=DEF_COL;  /* colors of the regions with clipped colors (commands maxc,minc) */
 int   defScalMethod=0;         /* method to display the scale */
 int   basCol[3]={0,1,2};       /* color indexes due to basic colormap: 0=black 1=white 2=neutral (grey) */
-int   foregrndcol=0, backgrndcol=1;          /* default fore- and background color */
-double foregrndcol_rgb[4]={0., 0., 0., 1.};
-double backgrndcol_rgb[4]={1., 1., 1., 1.};
-int   perspectiveFlag=0;                     /* 0: Orthographic/Iso, 1: Perspective */
+int   foregrndcol=1, backgrndcol=0;          /* default fore- and background color (Dark Mode) */
+double foregrndcol_rgb[4]={0.92, 0.95, 0.98, 1.0};
+double backgrndcol_rgb[4]={0.05, 0.07, 0.10, 1.0};
+int   perspectiveFlag=1;                     /* 0: Orthographic/Iso, 1: Perspective (Default) */
 char          entity_k[SET_COLS]={'k','w','n','r','g','b','y','m','t','c','o'};  /* predefined colors of entities */
 GLfloat       entity_r[SET_COLS]={ 0., 1., .6, 1., 0., 0., 1., 1., 0., .6, 1. };
 GLfloat       entity_g[SET_COLS]={ 0., 1., .6, .0, 1., 0., 1., 0., 1., .3, .5 };
