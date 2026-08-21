@@ -19,6 +19,10 @@
 /*     along with this program; if not, write to the Free Software       */
 /*     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.         */
 /* --------------------------------------------------------------------  */
+/*  Addendum / Modernization:                                            */
+/*  CalculiX GraphiX (GLFW Edition)                                      */
+/*  Academic exercise in agentic programming by Carlo Monjaraz-Tec (2026)*/
+/* --------------------------------------------------------------------  */
 
 #include <cgx.h>
 #include <time.h>
@@ -4465,20 +4469,20 @@ void selectFontSize(int value)
 {
   switch (value)
   {
-    case 1: /* Compact (12px) */
-      legend_font = 1;
-      draw_font = 1;
-      printf("\n [GUI] Font size set to Compact (12px).\n\n");
-      break;
-    case 2: /* Normal (18px) */
+    case 1: /* Small (14pt) */
       legend_font = 4;
       draw_font = 4;
-      printf("\n [GUI] Font size set to Normal (18px).\n\n");
+      printf("\n [GUI] Font size set to Small (14pt).\n\n");
       break;
-    case 3: /* Large / +50% (24px) */
+    case 2: /* Medium / Default (20pt) */
       legend_font = 5;
       draw_font = 5;
-      printf("\n [GUI] Font size set to Large (+50%% / 24px).\n\n");
+      printf("\n [GUI] Font size set to Medium (20pt).\n\n");
+      break;
+    case 3: /* Big (32pt) */
+      legend_font = 6;
+      draw_font = 6;
+      printf("\n [GUI] Font size set to Big (32pt).\n\n");
       break;
   }
   updateDispLists();
@@ -7447,11 +7451,18 @@ int main( int argc, char **argv )
 
   /* get the current system type  */
   uname (cursys);
-  printf ("on a %s machine, ", cursys->sysname);
-  printf ("nodename %s, ", cursys->nodename);
-  printf ("release %s, ", cursys->release);
-  printf ("version %s, ", cursys->version);
-  printf ("machine %s \n", cursys->machine);
+  printf("\n================================================================================\n");
+  printf("                     CalculiX GraphiX (CGX) - GLFW Edition                      \n");
+  printf("================================================================================\n");
+  printf("  Original Authors : Copyright (C) 1996-2024 Klaus Wittig and contributors\n");
+  printf("  Modernization    : Carlo Monjaraz-Tec (2026)\n");
+  printf("  Frameworks       : Pure GLFW3, Modern OpenGL & stb_truetype (Zero GLUT / Zero X11)\n");
+  printf("  OS Platform      : %s %s (%s)\n\n", cursys->sysname, cursys->release, cursys->machine);
+  printf("  An academic exercise for learning agentic programming based on the great\n");
+  printf("  work of CalculiX GraphiX original authors and contributors.\n\n");
+  printf("  Disclaimer:\n");
+  printf("  Provided AS IS for academic exploration with NO WARRANTY of any kind.\n");
+  printf("================================================================================\n\n");
 
   if (getenv("CGXDOCS")!=NULL) {
   	sprintf(helpfile[0],"%s",getenv("CGXDOCS"));
@@ -7774,9 +7785,9 @@ int main( int argc, char **argv )
   for(i=0; i<cmaps; i++) glutAddMenuEntry(cmap_names[i], i+1);
 
   subsubmenu_fontsize = glutCreateMenu( selectFontSize );
-  glutAddMenuEntry("Compact (12px)", 1);
-  glutAddMenuEntry("Normal (18px)", 2);
-  glutAddMenuEntry("Large (+50% / 24px)", 3);
+  glutAddMenuEntry("Small", 1);
+  glutAddMenuEntry("Medium (Default)", 2);
+  glutAddMenuEntry("Big", 3);
 
   submenu_gui = glutCreateMenu( selectGUI );
   glutAddMenuEntry("Toggle Dark Mode", 1);
@@ -7797,13 +7808,11 @@ int main( int argc, char **argv )
   glutAddMenuEntry("Toggle Element Edges", 8);
   glutAddMenuEntry("Toggle Surfaces/Volumes", 9);
   glutAddMenuEntry("Toggle Move-Z/Zoom", 10);
-  glutAddMenuEntry("Toggle Dark Mode / Light Mode", 11);
   glutAddMenuEntry("Toggle Vector-Plot", 12);
   glutAddMenuEntry("Toggle Add-Displacement", 13);
   glutAddMenuEntry("Toggle Shaded Results", 14);
   glutAddMenuEntry("Toggle Transparency", 16);
   glutAddMenuEntry("Toggle Ruler", 17);
-  glutAddMenuEntry("Toggle Perspective / Ortho View", 19);
   glutAddSubMenu  ("Colormap", subsubmenu_colormap );
 
   submenu_animate = glutCreateMenu( changeAnimation );

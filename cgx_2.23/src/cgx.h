@@ -159,16 +159,16 @@
 #define     MAX_MATERIALS     99999       /* maximum material number (limited by frd-format to 99999) */
 #define     MILLISECONDS_PER_PERIOD 1200  /* default length of one period of animation */
 #define     GLUT_MENU_POINT_HEIGHT  18    /* seems to be always that value anyway(?) */
-#define     GLUT_FONT      {  GLUT_BITMAP_TIMES_ROMAN_10,\
+#define     GLUT_FONT      {  GLUT_BITMAP_HELVETICA_10,\
                               GLUT_BITMAP_HELVETICA_12,\
                               GLUT_BITMAP_8_BY_13,\
                               GLUT_BITMAP_9_BY_15,\
                               GLUT_BITMAP_HELVETICA_18,\
-                              GLUT_BITMAP_TIMES_ROMAN_24,\
-                              GLUT_BITMAP_IOSEVKA_18}
-#define     GLUT_FONT_WIDTH  { 5,6,8,9,10,11,9 }
-#define     GLUT_FONT_HEIGHT  { 16,18,18,18,20,24,18 }
-#define     DEF_GLUT_FONT      5          /* indx starts with 0 (5 = GLUT_BITMAP_TIMES_ROMAN_24, 24px) */
+                              GLUT_BITMAP_HELVETICA_18,\
+                              GLUT_BITMAP_HELVETICA_18}
+#define     GLUT_FONT_WIDTH  { 5,6,8,9,10,10,10 }
+#define     GLUT_FONT_HEIGHT  { 10,12,13,15,18,18,18 }
+#define     DEF_GLUT_FONT      4          /* indx starts with 0 (4 = GLUT_BITMAP_HELVETICA_18) */
 #define     SUM_GLUT_FONTS     7
 
 /* glu steps seem to be restricted */

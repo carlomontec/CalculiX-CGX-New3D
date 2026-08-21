@@ -10,9 +10,12 @@
 /*     published by the Free Software Foundation; version 2 of           */
 /*     the License.                                                      */
 /* --------------------------------------------------------------------  */
-
-/* write2vtu.c - Export mesh and field datasets to VTK XML Unstructured Grid (.vtu) */
-/* and ParaView Data collection (.pvd) with Base64 Binary (default) & ASCII support  */
+/*  write2vtu.c - Native VTK XML (.vtu) and ParaView Collection (.pvd)   */
+/*  Base64 binary and ASCII exporter for CalculiX GraphiX (GLFW Edition) */
+/*                                                                       */
+/*  Created by Carlo Monjaraz-Tec (2026) with AI pair-programming        */
+/*  assistance based on the original work of Klaus Wittig & contributors.*/
+/* --------------------------------------------------------------------  */
 
 #include <cgx.h>
 #include <stdio.h>

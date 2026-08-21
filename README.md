@@ -1,40 +1,40 @@
-# CalculiX GraphiX (new Engine) 🚀
+# CalculiX GraphiX (GLFW Edition) 🚀
 
-> **Modern, High-Performance 3D Visualizer & Pre/Post-Processor for the CalculiX FEA Suite.**
+> **A Modernized, Cross-Platform 3D FEA Pre/Post-Processor for CalculiX.**
 
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](COPYING)
 [![Platform: macOS | Linux | Windows](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-brightgreen.svg)](#-quick-start--build-instructions)
-[![Backend: GLFW + OpenGL](https://img.shields.io/badge/Engine-GLFW%203%20%2B%20OpenGL-orange.svg)](#-highlights--new-features)
+[![Dependencies: 100% GLUT-Free](https://img.shields.io/badge/Dependencies-100%25%20GLUT--Free%20%26%20X11--Free-success.svg)](#-highlights--new-features)
+[![Graphics: GLFW3 + Modern OpenGL](https://img.shields.io/badge/Graphics-GLFW3%20%2B%20stb__truetype-orange.svg)](#-highlights--new-features)
 [![ParaView: Native VTU/PVD](https://img.shields.io/badge/ParaView-Native%20VTU%2FPVD-purple.svg)](#-native-paraview-vtupvd-exporter)
 
 ---
 
-## 🌟 What is CalculiX GraphiX (new Engine)?
+## 🌟 About This Project
 
-`CalculiX-CGX-New3D` is a modernized engine for **CalculiX GraphiX (CGX)**, the interactive 3D finite element pre- and post-processor created by **Klaus Wittig** as part of the renowned open-source [CalculiX](http://www.calculix.de/) finite element analysis system.
+This project is an **academic exercise for learning agentic programming** by **Carlo Monjaraz-Tec**, based on the great work of the original authors and contributors of **CalculiX GraphiX (CGX)**, originally led by **Klaus Wittig**.
 
-This new engine replaces legacy 1990s X11 / GLUT dependencies with a high-performance **GLFW & modern OpenGL architecture**, delivering a crisp, fluid, native experience on modern operating systems.
+The objective is to explore agent-assisted refactoring by modernizing CGX's windowing and rendering layer (introducing GLFW3, smooth vector typography via `stb_truetype`, an in-window command bar, dark mode, and 3D perspective projection) and VTU export, while keeping all core finite element mechanics, meshing routines (`libSNL`), file parsers, and solver workflows completely intact.
 
 ---
 
 ## ✨ Highlights & New Features
 
-* 🍏 **Zero X11 / XQuartz Requirement on macOS**: Runs completely native via Cocoa & Metal OpenGL pipelines with full Apple Silicon (M1/M2/M3/M4) and Retina display support.
-* 🐧 **Native Linux Wayland & X11 Compatibility**: Fluid hardware-accelerated rendering on modern Linux desktops without legacy X11 lock-in.
-* ⌨️ **Interactive In-Window Command Bar**: Sleek bottom command strip with live execution, autocomplete feel, and `Up`/`Down` arrow command history.
-* 🪟 **Multi-Level Cascade Popup Menus**: Modern translucent dropdown menus with hover feedback, submenus, and larger click targets.
-* 🎥 **True 3D Perspective Projection**: Toggle between realistic 3D perspective depth and classic isometric orthographic views with unbounded close-up zooming.
-* 🧭 **Vibrant RGB Coordinate Triad (CSYS)**: Color-coded $X$ (Red), $Y$ (Green), and $Z$ (Blue) axes that smoothly rotate with the model.
-* 📊 **Native Base64 Binary VTU/PVD Exporter**: 1-click export of complex 1D, 2D, and 3D meshes and transient results to ParaView.
+* 🚀 **100% GLUT-Free & X11-Free**: Completely eliminated legacy 1990s X11, GLX, and raw GLUT dependencies. Windowing and input events are routed through a modern, native **GLFW3** layer across macOS (Apple Silicon / Intel), Linux (Wayland / X11), and Windows.
+* 🖋️ **Anti-Aliased Vector Typography**: Integrated [`stb_truetype`](https://github.com/nothings/stb) single-header font engine. All 3D model node labels, element numbers, dataset legends, the stationary ruler, and UI elements render with **smooth, crisp vector typography** (calibrated at `Small (14pt)`, `Medium (20pt / Default)`, and `Big (32pt)` for 4K/Retina screens).
+* 🌙 **Signature Dark Mode by Default**: Modern dark slate aesthetic (`#0D121A`) with high-contrast foreground rendering.
+* 🎥 **True 3D Perspective Projection**: Active by default with smooth rotational trackball controls and unbounded close-up zooming.
+* ⌨️ **Interactive In-Window Command Bar**: Sleek bottom command strip featuring command history navigation (`Up` / `Down` arrows), instant execution, and visual prompt.
+* 📏 **Stationary 2D Viewport Ruler**: Screen-space isolated orthogonal scale bar, completely unaffected by 3D rotation or zoom.
+* 🎛️ **Modern Cascading Context Menus**: Floating glassmorphism menus with electric-blue hover accents and dedicated `GUI Settings >` controls.
+* 📊 **Native Base64 Binary VTU/PVD Exporter**: 1-click export of complex 1D, 2D, and 3D meshes and transient results to ParaView (`send all vtu all`).
 * 🎨 **Perceptual Scientific Colormaps**: Built-in `coolwarm`, `turbo`, `viridis`, `inferno`, `jet`, `gray`, and `classic` palettes.
-* 🌙 **Dark Mode & Light Mode**: Switch instantly between sleek dark charcoal theme (`#080C11`) and classic clean white.
-* 🔤 **Crisp Cross-Platform Typography**: Universal Helvetica 18 bitmap font compiled directly from C source tables (zero external font dependencies).
 
 ---
 
 ## 🚀 Quick Start & Build Instructions
 
-### 🍏 macOS (Homebrew)
+### 🍏 macOS
 
 1. **Install GLFW**:
    ```bash
@@ -110,10 +110,10 @@ This new engine replaces legacy 1990s X11 / GLUT dependencies with a high-perfor
 
 | Gesture | Action |
 | :--- | :--- |
-| **Left Click + Drag** | **Rotate 3D Model** (smooth trackball rotation around center) |
+| **Left Click + Drag** | **Rotate 3D Model** (smooth trackball rotation around model center) |
 | **Right Click + Drag** | **Pan / Translate** model horizontally & vertically |
 | **Scroll Wheel** or **Middle Drag** | **Smooth Continuous Zoom** (unbounded zoom range) |
-| **Right Click** (click & release) | **Open Multi-Level Popup Menu** |
+| **Right Click** (click & release) | **Open Multi-Level Cascading Menu** |
 
 ---
 
@@ -123,8 +123,8 @@ This new engine replaces legacy 1990s X11 / GLUT dependencies with a high-perfor
 | :--- | :--- |
 | `frame` | Auto-fit and center the 3D model in the viewport |
 | `view persp` | Switch to realistic 3D Perspective Projection |
-| `view ortho` | Switch to classic Orthographic (Isometric) parallel view |
-| `view dark` | Switch viewport to modern Dark Mode (`#080C11`) |
+| `view ortho` | Switch to classic Orthographic parallel view |
+| `view dark` | Switch viewport to modern Dark Mode (`#0D121A`) |
 | `view light` | Switch viewport to classic Light Mode (White) |
 | `ds <step> e <comp>` | Load and display specific result dataset (e.g. `ds 4 e 4`) |
 | `plot fv all` | Plot filled contour values on entire model |
@@ -150,21 +150,15 @@ send <set> vtu [all] [ascii]
 
 ---
 
-## 📖 Further Documentation
-
-* 📘 [**New Engine User Guide** (`NEW_ENGINE_GUIDE.md`)](cgx_2.23/NEW_ENGINE_GUIDE.md) — Comprehensive deep-dive on modern features, keyboard shortcuts, and architecture.
-* 📚 [**Official LaTeX Manual** (`doc/cgx.tex`)](cgx_2.23/doc/cgx.tex) — Upstream manual with all keywords and technical reference.
-
----
-
 ## ⚖️ License & Attribution
 
-This project is free and open-source software distributed under the **GNU General Public License Version 2 (GPL-2.0 or later)**, strictly adhering to original CalculiX licensing.
+This project is free and open-source software distributed under the **GNU General Public License Version 2 (GPL-2.0 or later)**, strictly adhering to the original CalculiX licensing.
 
-### Upstream Authors & Copyright:
+### Original Authors & Copyright:
 * **CalculiX GraphiX (CGX)** is created and copyrighted by **Klaus Wittig** (`klaus.h.wittig@t-online.de`).
-* **CalculiX CrunchiX (CCX)** is created and copyrighted by **Guido Dhondt** (`dhondt@t-online.de`).
+* **CalculiX CrunchiX (CCX)** is created and copyrighted by **Dr. Guido Dhondt** (`dhondt@t-online.de`).
 * Official CalculiX website: [http://www.calculix.de](http://www.calculix.de) / [https://www.dhondt.de](https://www.dhondt.de)
 
 ### Project Maintainer & AI Pairing:
-* Modernized by **Carlo Monjaraz-Tec** ([@carlomontec](https://github.com/carlomontec)) in collaboration with **Gemini 3.7 Flash** as an open-source exploration of modern scientific visualization architectures.
+* Modernized by **Carlo Monjaraz-Tec** ([@carlomontec](https://github.com/carlomontec)) in collaboration with **Antigravity (AGY)** as an open-source academic exploration of agent-assisted scientific software modernization.
+* **Disclaimer**: This software is provided "AS IS", without warranty of any kind, express or implied. The authors assume no liability for errors, bugs, or damages.

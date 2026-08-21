@@ -1,6 +1,9 @@
 # --------------------------------------------------------------------
-# Makefile.glfw - Modern GLFW & OpenGL Build for CalculiX CGX
-# Compiles native macOS (Cocoa/Metal) and native Linux (Wayland/X11)
+# CalculiX GraphiX (GLFW Edition)
+# File: Makefile.glfw - Cross-Platform Build for macOS, Linux, Windows
+#
+# Created by Carlo Monjaraz-Tec (2026) with AI pair-programming
+# assistance based on the original work of Klaus Wittig & contributors.
 # --------------------------------------------------------------------
 
 UNAME_S := $(shell uname -s)
@@ -10,11 +13,10 @@ CXX = g++
 
 CFLAGS = -O2 -Wall -Wno-narrowing -DUSE_GLFW \
   -I./ \
-  -I../../libSNL/src \
-  -I../../glut-3.5/src
+  -I../../libSNL/src
 
 ifeq ($(UNAME_S),Darwin)
-  # macOS native configuration (Zero X11 / Zero XQuartz)
+  # macOS native configuration (Zero X11 / Zero XQuartz / Zero GLUT)
   CFLAGS += -I/opt/homebrew/include -I/opt/homebrew/Cellar/glfw/3.5.1/include
   LFLAGS = -L/opt/homebrew/lib -L/opt/homebrew/Cellar/glfw/3.5.1/lib -lglfw \
            -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo \
@@ -35,19 +37,6 @@ include Makefile.inc
 ULIB = \
  userFunction.c
 
-# Pure OpenGL Font bitmap tables from glut-3.5 (Zero X11 dependencies)
-FONT_LIB = \
- ../../glut-3.5/src/glut_8x13.c \
- ../../glut-3.5/src/glut_9x15.c \
- ../../glut-3.5/src/glut_hel10.c \
- ../../glut-3.5/src/glut_hel18.c \
- ../../glut-3.5/src/glut_hel12.c \
- ../../glut-3.5/src/glut_tr10.c \
- ../../glut-3.5/src/glut_tr24.c \
- ../../glut-3.5/src/glut_iosevka18.c \
- ../../glut-3.5/src/glut_bitmap.c \
- ../../glut-3.5/src/glut_bwidth.c
-
 GLFW_LIB = \
  cgx_glut_glfw.c
 
@@ -58,7 +47,7 @@ CPP_SRC = \
 
 OUT = ../../../bin/cgx_glfw
 
-SRCS = $(SLIB) $(ULIB) $(FONT_LIB) $(GLFW_LIB)
+SRCS = $(SLIB) $(ULIB) $(GLFW_LIB)
 OBJS = $(SRCS:.c=.o)
 CPP_OBJS = $(CPP_SRC:.cpp=.o)
 

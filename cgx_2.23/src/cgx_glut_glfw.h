@@ -2,8 +2,14 @@
 #define CGX_GLUT_GLFW_H
 
 /* --------------------------------------------------------------------  */
-/* cgx_glut_glfw.h - Modern GLFW backend for CalculiX CGX                */
-/* Replaces legacy X11 GLUT 3.5 with native macOS Cocoa & Linux Wayland  */
+/* CalculiX GraphiX (GLFW Edition)                                       */
+/* File: cgx_glut_glfw.h - Modern GLFW3 Backend Header for CGX           */
+/*                                                                       */
+/* Created by Carlo Monjaraz-Tec (2026) with AI pair-programming         */
+/* assistance as an academic exercise based on the original work of      */
+/* Klaus Wittig and contributors.                                        */
+/*                                                                       */
+/* Licensed under GNU General Public License v2 (GPL-2.0 or later).      */
 /* --------------------------------------------------------------------  */
 
 #ifdef __APPLE__
@@ -110,25 +116,14 @@ extern "C" {
 #define GLUT_INIT_WINDOW_WIDTH          800
 #define GLUT_INIT_WINDOW_HEIGHT         801
 
-/* Bitmap Fonts */
-struct BitmapFontRec;
-extern struct BitmapFontRec glutBitmap9By15;
-extern struct BitmapFontRec glutBitmap8By13;
-extern struct BitmapFontRec glutBitmapTimesRoman10;
-extern struct BitmapFontRec glutBitmapTimesRoman24;
-extern struct BitmapFontRec glutBitmapHelvetica10;
-extern struct BitmapFontRec glutBitmapHelvetica12;
-extern struct BitmapFontRec glutBitmapHelvetica18;
-extern struct BitmapFontRec glutBitmapIosevka18;
-
-#define GLUT_BITMAP_9_BY_15             (&glutBitmap9By15)
-#define GLUT_BITMAP_8_BY_13             (&glutBitmap8By13)
-#define GLUT_BITMAP_TIMES_ROMAN_10      (&glutBitmapTimesRoman10)
-#define GLUT_BITMAP_TIMES_ROMAN_24      (&glutBitmapTimesRoman24)
-#define GLUT_BITMAP_HELVETICA_10        (&glutBitmapHelvetica10)
-#define GLUT_BITMAP_HELVETICA_12        (&glutBitmapHelvetica12)
-#define GLUT_BITMAP_HELVETICA_18        (&glutBitmapHelvetica18)
-#define GLUT_BITMAP_IOSEVKA_18          (&glutBitmapIosevka18)
+/* Modern Typography Font Handles */
+#define GLUT_BITMAP_9_BY_15             ((void*)1)
+#define GLUT_BITMAP_8_BY_13             ((void*)2)
+#define GLUT_BITMAP_TIMES_ROMAN_10      ((void*)3)
+#define GLUT_BITMAP_TIMES_ROMAN_24      ((void*)4)
+#define GLUT_BITMAP_HELVETICA_10        ((void*)5)
+#define GLUT_BITMAP_HELVETICA_12        ((void*)6)
+#define GLUT_BITMAP_HELVETICA_18        ((void*)7)
 
 /* GLUT API Function Prototypes */
 void glutInit(int *argcp, char **argv);
