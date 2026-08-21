@@ -44,6 +44,7 @@ FONT_LIB = \
  ../../glut-3.5/src/glut_hel12.c \
  ../../glut-3.5/src/glut_tr10.c \
  ../../glut-3.5/src/glut_tr24.c \
+ ../../glut-3.5/src/glut_iosevka18.c \
  ../../glut-3.5/src/glut_bitmap.c \
  ../../glut-3.5/src/glut_bwidth.c
 

@@ -164,11 +164,12 @@
                               GLUT_BITMAP_8_BY_13,\
                               GLUT_BITMAP_9_BY_15,\
                               GLUT_BITMAP_HELVETICA_18,\
-                              GLUT_BITMAP_TIMES_ROMAN_24}
-#define     GLUT_FONT_WIDTH  { 5,6,8,9,10,11 }
-#define     GLUT_FONT_HEIGHT  { 16,18,18,18,20,24 }
-#define     DEF_GLUT_FONT      5          /* indx starts with 0 (5 = GLUT_BITMAP_TIMES_ROMAN_24) */
-#define     SUM_GLUT_FONTS     6
+                              GLUT_BITMAP_TIMES_ROMAN_24,\
+                              GLUT_BITMAP_IOSEVKA_18}
+#define     GLUT_FONT_WIDTH  { 5,6,8,9,10,11,9 }
+#define     GLUT_FONT_HEIGHT  { 16,18,18,18,20,24,18 }
+#define     DEF_GLUT_FONT      6          /* indx starts with 0 (6 = GLUT_BITMAP_IOSEVKA_18) */
+#define     SUM_GLUT_FONTS     7
 
 /* glu steps seem to be restricted */
 #define     CGX_GLU_MAX_STEPS 200
