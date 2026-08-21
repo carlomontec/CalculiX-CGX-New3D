@@ -1780,6 +1780,12 @@ void scala_tex(double ratio, double dx, double dy, int divisions, double bmin, d
 
   extern char flipColorFlag;
 
+  glDisable(GL_CULL_FACE);
+  glDisable(GL_LIGHTING);
+  glDisable(GL_TEXTURE_1D);
+  glDisable(GL_TEXTURE_2D);
+  glDisable(GL_DEPTH_TEST);
+
   for (i=0; i<divisions; i++)
   {
     float r1, g1, b1, r2, g2, b2;
@@ -1793,22 +1799,23 @@ void scala_tex(double ratio, double dx, double dy, int divisions, double bmin, d
     define_rgb(v1, &r1, &g1, &b1);
     define_rgb(v2, &r2, &g2, &b2);
 
+    /* Counter-clockwise front-facing quad */
     glBegin ( GL_POLYGON );
       glColor3f ( r1, g1, b1 );
-      glVertex2d ( dx-kb*0., dy+kh*0. );
       glVertex2d ( dx-kb*1., dy+kh*0. );
+      glVertex2d ( dx-kb*0., dy+kh*0. );
       glColor3f ( r2, g2, b2 );
-      glVertex2d ( dx-kb*1., dy+kh*1. );
       glVertex2d ( dx-kb*0., dy+kh*1. );
+      glVertex2d ( dx-kb*1., dy+kh*1. );
     glEnd();
 
     glColor3dv ( col );
     glLineWidth(1.0f);
     glBegin ( GL_LINE_LOOP );
-      glVertex2d ( dx-kb*0., dy+kh*0. );
       glVertex2d ( dx-kb*1., dy+kh*0. );
-      glVertex2d ( dx-kb*1., dy+kh*1. );
+      glVertex2d ( dx-kb*0., dy+kh*0. );
       glVertex2d ( dx-kb*0., dy+kh*1. );
+      glVertex2d ( dx-kb*1., dy+kh*1. );
     glEnd();
 
     if(flag==0)
