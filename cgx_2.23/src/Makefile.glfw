@@ -55,7 +55,8 @@ ULIB = \
  userFunction.c
 
 GLFW_LIB = \
- cgx_glut_glfw.c
+ cgx_glut_glfw.c \
+ cgx_iosevka_font.c
 
 CPP_SRC = \
  uselibSNL.cpp \

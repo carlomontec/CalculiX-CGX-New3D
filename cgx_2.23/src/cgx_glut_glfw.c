@@ -689,50 +689,81 @@ static int get_cmd_bar_height(void)
   return 58;
 }
 
+extern const unsigned char g_iosevka_ss05_ttf[];
+extern const unsigned int g_iosevka_ss05_ttf_len;
+
 static void init_truetype_fonts(void)
 {
   if (g_font_atlas_ready) return;
 
-  const char *paths[] = {
-    "/System/Library/Fonts/Helvetica.ttc",
-    "/System/Library/Fonts/Supplemental/Arial.ttf",
-    "/Library/Fonts/Arial.ttf",
-    "/System/Library/Fonts/SFNS.ttf",
-    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-    "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-    "/usr/share/fonts/TTF/DejaVuSans.ttf",
-    "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
-    "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf",
-    "/usr/share/fonts/adwaita-sans-fonts/AdwaitaSans-Regular.ttf",
-    "/usr/share/fonts/liberation-sans-fonts/LiberationSans-Regular.ttf",
-    "/usr/share/fonts/google-droid-sans-fonts/DroidSans.ttf",
-    "C:\\Windows\\Fonts\\arial.ttf",
-    NULL
-  };
+  const unsigned char *ttf_buffer = NULL;
+  unsigned char *allocated_ttf = NULL;
 
-  FILE *f = NULL;
-  for (int i = 0; paths[i] != NULL; i++)
+  if (g_iosevka_ss05_ttf_len > 0)
   {
-    f = fopen(paths[i], "rb");
-    if (f) break;
+    ttf_buffer = g_iosevka_ss05_ttf;
+    printf(" [Font] Typography Engine: stb_truetype loaded embedded 'Iosevka SS05 Medium' (%u KB)\n", g_iosevka_ss05_ttf_len / 1024);
   }
-  if (!f) return;
-
-  fseek(f, 0, SEEK_END);
-  long size = ftell(f);
-  fseek(f, 0, SEEK_SET);
-  if (size <= 0) { fclose(f); return; }
-
-  unsigned char *ttf_buffer = (unsigned char *)malloc(size);
-  if (!ttf_buffer) { fclose(f); return; }
-
-  if (fread(ttf_buffer, 1, size, f) != (size_t)size)
+  else
   {
-    free(ttf_buffer);
+    const char *home = getenv("HOME");
+    char user_font_mac[512] = "";
+    char user_font_linux[512] = "";
+    if (home)
+    {
+      snprintf(user_font_mac, sizeof(user_font_mac), "%s/Library/Fonts/IosevkaSS05-Medium.ttf", home);
+      snprintf(user_font_linux, sizeof(user_font_linux), "%s/.local/share/fonts/IosevkaSS05-Medium.ttf", home);
+    }
+
+    const char *paths[] = {
+      "font/IosevkaSS05-Medium.ttf",
+      "../font/IosevkaSS05-Medium.ttf",
+      "../../font/IosevkaSS05-Medium.ttf",
+      "cgx/CalculiX-CGX-New3D/font/IosevkaSS05-Medium.ttf",
+      "src/font/IosevkaSS05-Medium.ttf",
+      user_font_mac,
+      user_font_linux,
+      "/Library/Fonts/IosevkaSS05-Medium.ttf",
+      "/System/Library/Fonts/Helvetica.ttc",
+      "/System/Library/Fonts/Supplemental/Arial.ttf",
+      "/Library/Fonts/Arial.ttf",
+      "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+      "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+      "C:\\Windows\\Fonts\\arial.ttf",
+      NULL
+    };
+
+    const char *loaded_font_path = NULL;
+    FILE *f = NULL;
+    for (int i = 0; paths[i] != NULL; i++)
+    {
+      if (paths[i][0] == '\0') continue;
+      f = fopen(paths[i], "rb");
+      if (f) {
+        loaded_font_path = paths[i];
+        break;
+      }
+    }
+    if (!f) return;
+    printf(" [Font] Typography Engine: stb_truetype loaded '%s'\n", loaded_font_path);
+
+    fseek(f, 0, SEEK_END);
+    long size = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    if (size <= 0) { fclose(f); return; }
+
+    allocated_ttf = (unsigned char *)malloc(size);
+    if (!allocated_ttf) { fclose(f); return; }
+
+    if (fread(allocated_ttf, 1, size, f) != (size_t)size)
+    {
+      free(allocated_ttf);
+      fclose(f);
+      return;
+    }
     fclose(f);
-    return;
+    ttf_buffer = allocated_ttf;
   }
-  fclose(f);
 
   int offset = stbtt_GetFontOffsetForIndex(ttf_buffer, 0);
   if (offset < 0) offset = 0;
@@ -768,7 +799,7 @@ static void init_truetype_fonts(void)
     free(temp_bitmap);
   }
 
-  free(ttf_buffer);
+  if (allocated_ttf) free(allocated_ttf);
   g_font_atlas_ready = 1;
 }
 
