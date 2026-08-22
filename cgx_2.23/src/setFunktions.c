@@ -25292,7 +25292,7 @@ void setMaterial_rgb(int col, float alpha)
   GLfloat mat_specular[4]; /* ungerichtete reflektion*/
   GLfloat mat_diffuse[4];  /* gerichtete reflektion*/
   GLfloat mat_ambient[4];  /* allseitige reflektion */
-  mat_shininess= 64.;    /* smooth specular highlight */
+  mat_shininess= 96.0f;    /* crisp metallic specular sheen */
 
   mat_specular[0]=MAT_SPEC;
   mat_specular[1]=MAT_SPEC;

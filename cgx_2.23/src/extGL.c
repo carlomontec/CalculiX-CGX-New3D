@@ -1656,6 +1656,40 @@ void get_cmap_gray(float v, float **r, float **g, float **b)
 }
 
 
+// Dave Green's Cubehelix colormap (perceptually monotonic in lightness)
+void get_cmap_cubehelix(float v, float **r, float **g, float **b)
+{
+  if (v < 0.0f) v = 0.0f;
+  if (v > 1.0f) v = 1.0f;
+  
+  /* Lift the darkest floor from pitch black (0.0) to dark graphite slate (0.12)
+     so 3D diffuse lighting and surface curvature remain visible across minimum regions */
+  float floor_val = 0.12f;
+  float lam = floor_val + (1.0f - floor_val) * v;
+  
+  float start = 0.5f;
+  float rots = -1.5f;
+  float hue = 1.0f;
+  
+  float phi = 2.0f * 3.14159265358979323846f * (start / 3.0f + 1.0f + rots * lam);
+  float a = hue * lam * (1.0f - lam) / 2.0f;
+  float cos_phi = cosf(phi);
+  float sin_phi = sinf(phi);
+  
+  float red   = lam + a * (-0.14861f * cos_phi + 1.78277f * sin_phi);
+  float green = lam + a * (-0.29227f * cos_phi - 0.90649f * sin_phi);
+  float blue  = lam + a * (1.97294f * cos_phi);
+  
+  if (red < 0.0f) red = 0.0f; else if (red > 1.0f) red = 1.0f;
+  if (green < 0.0f) green = 0.0f; else if (green > 1.0f) green = 1.0f;
+  if (blue < 0.0f) blue = 0.0f; else if (blue > 1.0f) blue = 1.0f;
+  
+  **r = red;
+  **g = green;
+  **b = blue;
+}
+
+
 // Call appropriate colormap generator
 // v,r,g,b ∈ [0;1]
 void define_rgb(float v, float *r, float *g, float *b)
@@ -1668,6 +1702,8 @@ void define_rgb(float v, float *r, float *g, float *b)
     get_cmap_inferno(v, &r, &g, &b);
   else if( compare( cmap_name, "coolwarm", 2)==2)
     get_cmap_coolwarm(v, &r, &g, &b);
+  else if( compare( cmap_name, "cubehelix", 4)==4 || compare( cmap_name, "cube", 4)==4)
+    get_cmap_cubehelix(v, &r, &g, &b);
   else if( compare( cmap_name, "classic", 2)==2)
     get_cmap_classic(v, &r, &g, &b);
   else if( compare( cmap_name, "jet", 2)==2)

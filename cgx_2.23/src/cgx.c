@@ -285,9 +285,9 @@ int   lcase_animList={-1};                       /* additional lcase for the val
 int   read_mode=0;                               /* if 1 read data immediatelly, else read on demand */
 int   step_mode=0;                               /* if 1 read step data and write the single parts from an assembly to the filesystem */
 int   centerNode=0;                    /* Nr of center Node, 0:no centernode */
-int   cmaps=7;                         /* nr of colormap names */
-char *cmap_names[] = {"classic", "jet", "turbo", "viridis", "inferno", "coolwarm", "gray"};   /* Colormap names */
-char  cmap_name[MAX_LINE_LENGTH] = "classic";         /* default Colormap */
+int   cmaps=8;                         /* nr of colormap names */
+char *cmap_names[] = {"classic", "jet", "turbo", "viridis", "inferno", "coolwarm", "cubehelix", "gray"};   /* Colormap names */
+char  cmap_name[MAX_LINE_LENGTH] = "cubehelix";       /* default Colormap */
 char  inpformat=0;                     /* defines the start-up mode of cgx */
 char  allowSysFlag=ALLOW_SYS_FLAG;                  /* 1: allow the execution of system calls (sys command) */
 char  autoDivFlag=1;                   /* The div command will set it to 0 and no auto-div is executed */
@@ -7260,7 +7260,7 @@ void initLight_rgb( void )
   /* lichtanteile rgba definieren  */
     static GLfloat ambient0[] = { AMB, AMB, AMB, 1.0 }; /* ungerichtet */
     static GLfloat diffuse0[] = { DIFF, DIFF, DIFF, 1.0 }; /* gerichtetes licht*/
-    static GLfloat specular0[] = { 0.3f, 0.3f, 0.3f, 1.0f };
+    static GLfloat specular0[] = { 0.55f, 0.55f, 0.55f, 1.0f };
 
   /* Position der Lichtquellen xyzw, mit w=0.0 gerichtetes licht aus Betrachterrichtung */
     static GLfloat position0[] = { 0.25f, 0.45f, 0.85f, 0.0f };
@@ -7276,6 +7276,9 @@ void initLight_rgb( void )
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient); /* globales licht ohne quelle */
     glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, lmodel_twoside);
     glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_FALSE); /* GL_FALSE: infinite distance */
+#ifdef GL_LIGHT_MODEL_COLOR_CONTROL
+    glLightModeli(GL_LIGHT_MODEL_COLOR_CONTROL, GL_SEPARATE_SPECULAR_COLOR); /* Metallic highlights on textures */
+#endif
 
     glEnable(GL_LIGHT0);
     glDisable (GL_COLOR_MATERIAL);      /* improves performance (~2%) */

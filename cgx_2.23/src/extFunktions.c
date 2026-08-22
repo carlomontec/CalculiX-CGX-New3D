@@ -167,7 +167,7 @@ void help( void )
   printf ("   'body' <name|!> [<set>]|[<surf1> <surf2>]|[<surf1> <surf2> <surf3> <surf4> <surf5> [<surf6>] [<surf7>]]\n");
   printf ("   'break'\n");
   printf ("   'call' <parameters> \n");
-  printf ("   'cmap' 'classic'|'grey'|'inferno'|'jet'|'coolwarm'|'turbo'|'viridis' (two significant char)\n");
+  printf ("   'cmap' 'classic'|'grey'|'inferno'|'jet'|'coolwarm'|'turbo'|'viridis'|'cubehelix' (two significant char)\n");
   printf ("   'cntr' <pnt|nod|set>|[x y z] \n");
   printf ("   'col' <name> <red> <green> <blue> [<maxvalue>]\n");
   printf ("   'comp' <set|*chars*> 'c'|'d'|'e'|'f'|'p'|'u'\n");

@@ -184,7 +184,7 @@ used fom material illumination
 #define AMB      0.22
 #define DIFF     0.80
 #define MAT_DIFF 0.6
-#define MAT_SPEC 0.15
+#define MAT_SPEC 0.38
 
 #define  CMAP_CELLS_LIGHT  34             /* number of grey-values in the colormap */
 #define  CMAP_DARKSHIFT     5             /* black-shift of the most bright color-cell */
